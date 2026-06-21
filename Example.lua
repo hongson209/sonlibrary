@@ -429,7 +429,7 @@ tabs.Settings:InsertConfigSection()
 
 Window.onUnloaded(function()
 	print("Unloaded!")
-end)
+	end)
 
 tabs.Main:Select()
 SonLib:LoadAutoLoadConfig()
