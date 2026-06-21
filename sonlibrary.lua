@@ -1,11 +1,3 @@
---[[
-SonLib - Premium UI Library (Fork from WMacLib)
-Fixes:
-- Drag from entire topbar (like Fluent)
-- Minimize button shows/hides UI (like Fluent)
-- Close button works
-]]
-
 local SonLib = { 
 	Options = {}, 
 	Folder = "SonLib", 
@@ -129,7 +121,6 @@ function SonLib:Gradient(text, fromColor, toColor)
 	return result
 end
 
--- THEMES
 SonLib:AddTheme({
 	Name = "Dark",
 	Accent = Color3.fromRGB(24, 24, 27),
@@ -238,7 +229,6 @@ SonLib:AddTheme({
 	Icon = Color3.fromRGB(122, 162, 247),
 })
 
--- Services
 local TweenService = SonLib.GetService("TweenService")
 local RunService = SonLib.GetService("RunService")
 local HttpService = SonLib.GetService("HttpService")
@@ -247,7 +237,6 @@ local UserInputService = SonLib.GetService("UserInputService")
 local Lighting = SonLib.GetService("Lighting")
 local Players = SonLib.GetService("Players")
 
--- Variables
 local isStudio = RunService:IsStudio()
 local LocalPlayer = Players.LocalPlayer
 
@@ -277,7 +266,6 @@ local assets = {
 	sliderhead = "rbxassetid://18772834246",
 }
 
--- Functions
 local function GetGui()
 	local newGui = Instance.new("ScreenGui")
 	newGui.ScreenInsets = Enum.ScreenInsets.None
@@ -462,8 +450,8 @@ function SonLib:Window(Settings)
 	local exit = Instance.new("TextButton")
 	exit.Name = "Exit"
 	exit.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
-	exit.Text = ""
-	exit.TextColor3 = Color3.fromRGB(0, 0, 0)
+	exit.Text = "✕"
+	exit.TextColor3 = Color3.fromRGB(255, 255, 255)
 	exit.TextSize = 14
 	exit.AutoButtonColor = false
 	exit.BackgroundColor3 = Color3.fromRGB(250, 93, 86)
@@ -477,13 +465,12 @@ function SonLib:Window(Settings)
 
 	exit.Parent = controls
 
-	-- MINIMIZE BUTTON (Fluent style: shows/hides UI)
 	local minimize = Instance.new("TextButton")
 	minimize.Name = "Minimize"
 	minimize.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
-	minimize.Text = ""
-	minimize.TextColor3 = Color3.fromRGB(0, 0, 0)
-	minimize.TextSize = 14
+	minimize.Text = "─"
+	minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
+	minimize.TextSize = 16
 	minimize.AutoButtonColor = false
 	minimize.BackgroundColor3 = Color3.fromRGB(252, 190, 57)
 	minimize.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -497,8 +484,6 @@ function SonLib:Window(Settings)
 
 	minimize.Parent = controls
 
-	-- MAXIMIZE BUTTON (removed - we use this as a toggle now)
-	-- We keep it for compatibility but hide it
 	local maximize = Instance.new("TextButton")
 	maximize.Name = "Maximize"
 	maximize.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
@@ -510,7 +495,7 @@ function SonLib:Window(Settings)
 	maximize.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	maximize.BorderSizePixel = 0
 	maximize.LayoutOrder = 2
-	maximize.Visible = false  -- HIDDEN
+	maximize.Visible = false
 
 	local uICorner2 = Instance.new("UICorner")
 	uICorner2.Name = "UICorner"
@@ -996,11 +981,6 @@ function SonLib:Window(Settings)
 	uIPadding2.PaddingRight = UDim.new(0, 20)
 	uIPadding2.Parent = elements
 
-	-- ============================================
-	-- FIXED: DRAG FROM ENTIRE TOPBAR (like Fluent)
-	-- Removed moveIcon, drag works on whole topbar
-	-- ============================================
-	
 	local currentTab = Instance.new("TextLabel")
 	currentTab.Name = "CurrentTab"
 	currentTab.FontFace = Font.new(assets.interFont)
@@ -1028,92 +1008,6 @@ function SonLib:Window(Settings)
 	topbar.Parent = content
 
 	content.Parent = base
-
-	-- ============================================
-	-- NEW DRAG SYSTEM - Drag from topbar (like Fluent)
-	-- ============================================
-	local dragging_ = false
-	local dragInput = nil
-	local dragStart = nil
-	local startPos = nil
-
-	local function update(input)
-		local delta = input.Position - dragStart
-		local viewport = workspace.CurrentCamera.ViewportSize
-		
-		local newX = (startPos.X.Scale * viewport.X + startPos.X.Offset + delta.X) / viewport.X
-		local newY = (startPos.Y.Scale * viewport.Y + startPos.Y.Offset + delta.Y) / viewport.Y
-		
-		local sizeX = base.AbsoluteSize.X
-		local sizeY = base.AbsoluteSize.Y
-		newX = math.clamp(newX, 0, 1 - sizeX/viewport.X)
-		newY = math.clamp(newY, 0, 1 - sizeY/viewport.Y)
-		
-		base.Position = UDim2.new(newX, 0, newY, 0)
-	end
-
-	local function onDragStart(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-		   input.UserInputType == Enum.UserInputType.Touch then
-			dragging_ = true
-			dragInput = input
-			dragStart = input.Position
-			startPos = base.Position
-		end
-	end
-
-	local function onDragEnd(input)
-		if input == dragInput then
-			dragging_ = false
-			dragInput = nil
-		end
-	end
-
-	local function onDragUpdate(input)
-		if dragging_ and (input.UserInputType == Enum.UserInputType.MouseMovement or 
-						  input.UserInputType == Enum.UserInputType.Touch) then
-			update(input)
-		end
-	end
-
-	-- Drag from ENTIRE topbar (like Fluent)
-	topbar.InputBegan:Connect(onDragStart)
-	topbar.InputChanged:Connect(onDragUpdate)
-	topbar.InputEnded:Connect(onDragEnd)
-
-	-- Also drag from content for convenience
-	content.InputBegan:Connect(onDragStart)
-	content.InputChanged:Connect(onDragUpdate)
-	content.InputEnded:Connect(onDragEnd)
-
-	-- Global input handler
-	UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging_ then
-			update(input)
-		end
-	end)
-
-	UserInputService.InputEnded:Connect(function(input)
-		if input == dragInput then
-			dragging_ = false
-			dragInput = nil
-		end
-	end)
-
-	-- ============================================
-	-- FLUENT-STYLE MINIMIZE (Show/Hide UI)
-	-- ============================================
-	local uiVisible = true
-
-	local function ToggleUI()
-		uiVisible = not uiVisible
-		base.Visible = uiVisible
-		minimize.Text = uiVisible and "─" or "□"
-	end
-
-	-- ============================================
-	-- END OF FIXES
-	-- ============================================
 
 	local globalSettings = Instance.new("Frame")
 	globalSettings.Name = "GlobalSettings"
@@ -1153,6 +1047,96 @@ function SonLib:Window(Settings)
 	globalSettingsUIScale.Parent = globalSettings
 	globalSettings.Parent = base
 	base.Parent = sonGui
+
+	local uiVisible = true
+
+	local function ToggleUI()
+		uiVisible = not uiVisible
+		base.Visible = uiVisible
+		minimize.Text = uiVisible and "─" or "□"
+	end
+
+	local dragging_ = false
+	local dragInput = nil
+	local dragStart = nil
+	local startPos = nil
+	local isTouchDragging = false
+
+	local function update(input)
+		local delta = input.Position - dragStart
+		local viewport = workspace.CurrentCamera.ViewportSize
+		
+		local newX = (startPos.X.Scale * viewport.X + startPos.X.Offset + delta.X) / viewport.X
+		local newY = (startPos.Y.Scale * viewport.Y + startPos.Y.Offset + delta.Y) / viewport.Y
+		
+		local sizeX = base.AbsoluteSize.X
+		local sizeY = base.AbsoluteSize.Y
+		newX = math.clamp(newX, 0, 1 - sizeX/viewport.X)
+		newY = math.clamp(newY, 0, 1 - sizeY/viewport.Y)
+		
+		base.Position = UDim2.new(newX, 0, newY, 0)
+	end
+
+	local function onDragStart(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging_ = true
+			dragInput = input
+			dragStart = input.Position
+			startPos = base.Position
+		elseif input.UserInputType == Enum.UserInputType.Touch then
+			isTouchDragging = true
+			dragInput = input
+			dragStart = input.Position
+			startPos = base.Position
+		end
+	end
+
+	local function onDragEnd(input)
+		if input == dragInput then
+			dragging_ = false
+			isTouchDragging = false
+			dragInput = nil
+		end
+	end
+
+	local function onDragUpdate(input)
+		if dragging_ and input.UserInputType == Enum.UserInputType.MouseMovement then
+			update(input)
+		elseif isTouchDragging and input.UserInputType == Enum.UserInputType.Touch then
+			update(input)
+		end
+	end
+
+	topbar.InputBegan:Connect(onDragStart)
+	topbar.InputChanged:Connect(onDragUpdate)
+	topbar.InputEnded:Connect(onDragEnd)
+
+	content.InputBegan:Connect(onDragStart)
+	content.InputChanged:Connect(onDragUpdate)
+	content.InputEnded:Connect(onDragEnd)
+
+	sidebar.InputBegan:Connect(onDragStart)
+	sidebar.InputChanged:Connect(onDragUpdate)
+	sidebar.InputEnded:Connect(onDragEnd)
+
+	local function onGlobalInputChanged(input)
+		if dragging_ and input == dragInput and input.UserInputType == Enum.UserInputType.MouseMovement then
+			update(input)
+		elseif isTouchDragging and input == dragInput and input.UserInputType == Enum.UserInputType.Touch then
+			update(input)
+		end
+	end
+
+	local function onGlobalInputEnded(input)
+		if input == dragInput then
+			dragging_ = false
+			isTouchDragging = false
+			dragInput = nil
+		end
+	end
+
+	UserInputService.InputChanged:Connect(onGlobalInputChanged)
+	UserInputService.InputEnded:Connect(onGlobalInputEnded)
 
 	function WindowFunctions:UpdateTitle(NewTitle)
 		title.Text = NewTitle
@@ -1888,11 +1872,6 @@ function SonLib:Window(Settings)
 				sectionUIPadding.PaddingTop = UDim.new(0, 22)
 				sectionUIPadding.Parent = section
 
-				-- ============================================
-				-- ALL SECTION FUNCTIONS (Button, Toggle, Slider, etc.)
-				-- Same as original WMacLib - keeping all functionality
-				-- ============================================
-				
 				function SectionFunctions:Button(Settings, Flag)
 					local ButtonFunctions = {Settings = Settings}
 					local button = Instance.new("Frame")
@@ -2472,11 +2451,6 @@ function SonLib:Window(Settings)
 					return SliderFunctions
 				end
 
-				-- ============================================
-				-- INPUT, KEYBIND, DROPDOWN, COLORPICKER, HEADER, LABEL, ETC.
-				-- All kept same as original WMacLib but with SonLib namespace
-				-- ============================================
-				
 				function SectionFunctions:Input(Settings, Flag)
 					local InputFunctions = { Settings = Settings, IgnoreConfig = false, Class = "Input" }
 					local input = Instance.new("Frame")
@@ -5113,9 +5087,6 @@ function SonLib:Window(Settings)
 				return SectionFunctions
 			end
 
-			-- ============================================
-			-- TAB SELECTION
-			-- ============================================
 			local function SelectCurrentTab()
 				local easetime = 0.15
 
@@ -5338,9 +5309,6 @@ function SonLib:Window(Settings)
 		return SectionFunctions
 	end
 
-	-- ============================================
-	-- NOTIFICATION SYSTEM
-	-- ============================================
 	function WindowFunctions:Notify(Settings)
 		local NotificationFunctions = {}
 
@@ -5865,7 +5833,6 @@ function SonLib:Window(Settings)
 		end
 	end)
 
-	-- FIXED: Minimize button now toggles UI visibility (like Fluent)
 	minimize.MouseButton1Click:Connect(ToggleUI)
 	
 	exit.MouseButton1Click:Connect(function()
@@ -5954,9 +5921,6 @@ function SonLib:Window(Settings)
 		return baseUIScale.Scale
 	end
 
-	-- ============================================
-	-- CONFIG SYSTEM (Save/Load)
-	-- ============================================
 	local ClassParser = {
 		["Toggle"] = {
 			Save = function(Flag, data)
