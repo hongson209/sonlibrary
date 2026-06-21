@@ -406,6 +406,7 @@ function SonLib:Window(Settings)
 	dividerInteract.TextSize = 14
 	dividerInteract.Parent = divider
 
+	-- Window Controls (Minimize & Close - Fluent style)
 	local windowControls = Instance.new("Frame")
 	windowControls.Name = "WindowControls"
 	windowControls.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -413,132 +414,109 @@ function SonLib:Window(Settings)
 	windowControls.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	windowControls.BorderSizePixel = 0
 	windowControls.Size = UDim2.new(1, 0, 0, 31)
+	windowControls.Parent = sidebar
 
+	-- Controls container (right-aligned)
 	local controls = Instance.new("Frame")
 	controls.Name = "Controls"
-	controls.BackgroundColor3 = Color3.fromRGB(119, 174, 94)
+	controls.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	controls.BackgroundTransparency = 1
 	controls.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	controls.BorderSizePixel = 0
-	controls.Size = UDim2.fromScale(1, 1)
+	controls.Size = UDim2.new(1, 0, 1, 0)
+	controls.Parent = windowControls
 
-	local uIListLayout = Instance.new("UIListLayout")
-	uIListLayout.Name = "UIListLayout"
-	uIListLayout.Padding = UDim.new(0, 5)
-	uIListLayout.FillDirection = Enum.FillDirection.Horizontal
-	uIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	uIListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-	uIListLayout.Parent = controls
+	-- Layout for buttons (right-aligned)
+	local controlLayout = Instance.new("UIListLayout")
+	controlLayout.Name = "ControlLayout"
+	controlLayout.FillDirection = Enum.FillDirection.Horizontal
+	controlLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	controlLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	controlLayout.Padding = UDim.new(0, 6)
+	controlLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	controlLayout.Parent = controls
 
-	local uIPadding = Instance.new("UIPadding")
-	uIPadding.Name = "UIPadding"
-	uIPadding.PaddingLeft = UDim.new(0, 11)
-	uIPadding.Parent = controls
+	-- Padding
+	local controlPadding = Instance.new("UIPadding")
+	controlPadding.Name = "ControlPadding"
+	controlPadding.PaddingRight = UDim.new(0, 12)
+	controlPadding.Parent = controls
 
-	local windowControlSettings = {
-		sizes = { enabled = UDim2.fromOffset(8, 8), disabled = UDim2.fromOffset(7, 7) },
-		transparencies = { enabled = 0, disabled = 1 },
-		strokeTransparency = 0.9,
-	}
-
-	local stroke = Instance.new("UIStroke")
-	stroke.Name = "BaseUIStroke"
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	setThemed(stroke, "Color", "Outline")
-	stroke.Transparency = windowControlSettings.strokeTransparency
-
-	local exit = Instance.new("TextButton")
-	exit.Name = "Exit"
-	exit.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
-	exit.Text = "✕"
-	exit.TextColor3 = Color3.fromRGB(255, 255, 255)
-	exit.TextSize = 14
-	exit.AutoButtonColor = false
-	exit.BackgroundColor3 = Color3.fromRGB(250, 93, 86)
-	exit.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	exit.BorderSizePixel = 0
-
-	local uICorner = Instance.new("UICorner")
-	uICorner.Name = "UICorner"
-	uICorner.CornerRadius = UDim.new(1, 0)
-	uICorner.Parent = exit
-
-	exit.Parent = controls
-
+	-- Minimize Button (─)
 	local minimize = Instance.new("TextButton")
 	minimize.Name = "Minimize"
 	minimize.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
 	minimize.Text = "─"
-	minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
-	minimize.TextSize = 16
+	minimize.TextColor3 = Color3.fromRGB(150, 150, 150)
+	minimize.TextSize = 18
+	minimize.TextTransparency = 0.3
 	minimize.AutoButtonColor = false
-	minimize.BackgroundColor3 = Color3.fromRGB(252, 190, 57)
+	minimize.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	minimize.BackgroundTransparency = 1
 	minimize.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	minimize.BorderSizePixel = 0
-	minimize.LayoutOrder = 1
-
-	local uICorner1 = Instance.new("UICorner")
-	uICorner1.Name = "UICorner"
-	uICorner1.CornerRadius = UDim.new(1, 0)
-	uICorner1.Parent = minimize
-
+	minimize.Size = UDim2.fromOffset(28, 28)
 	minimize.Parent = controls
 
-	local maximize = Instance.new("TextButton")
-	maximize.Name = "Maximize"
-	maximize.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
-	maximize.Text = ""
-	maximize.TextColor3 = Color3.fromRGB(0, 0, 0)
-	maximize.TextSize = 14
-	maximize.AutoButtonColor = false
-	maximize.BackgroundColor3 = Color3.fromRGB(119, 174, 94)
-	maximize.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	maximize.BorderSizePixel = 0
-	maximize.LayoutOrder = 2
-	maximize.Visible = false
+	-- Minimize hover
+	local minHover = Instance.new("Frame")
+	minHover.Name = "Hover"
+	minHover.Size = UDim2.fromScale(1, 1)
+	minHover.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+	minHover.BackgroundTransparency = 0.9
+	minHover.BorderSizePixel = 0
+	minHover.Parent = minimize
+	Instance.new("UICorner", minHover).CornerRadius = UDim.new(1, 0)
 
-	local uICorner2 = Instance.new("UICorner")
-	uICorner2.Name = "UICorner"
-	uICorner2.CornerRadius = UDim.new(1, 0)
-	uICorner2.Parent = maximize
+	minimize.MouseEnter:Connect(function()
+		minHover.BackgroundTransparency = 0.85
+		minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end)
+	minimize.MouseLeave:Connect(function()
+		minHover.BackgroundTransparency = 0.9
+		minimize.TextColor3 = Color3.fromRGB(150, 150, 150)
+	end)
 
-	maximize.Parent = controls
+	-- Close Button (✕)
+	local exit = Instance.new("TextButton")
+	exit.Name = "Exit"
+	exit.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
+	exit.Text = "✕"
+	exit.TextColor3 = Color3.fromRGB(150, 150, 150)
+	exit.TextSize = 16
+	exit.TextTransparency = 0.3
+	exit.AutoButtonColor = false
+	exit.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	exit.BackgroundTransparency = 1
+	exit.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	exit.BorderSizePixel = 0
+	exit.Size = UDim2.fromOffset(28, 28)
+	exit.Parent = controls
 
-	local function applyState(button, enabled)
-		local size = enabled and windowControlSettings.sizes.enabled or windowControlSettings.sizes.disabled
-		local transparency = enabled and windowControlSettings.transparencies.enabled or windowControlSettings.transparencies.disabled
+	-- Close hover
+	local exitHover = Instance.new("Frame")
+	exitHover.Name = "Hover"
+	exitHover.Size = UDim2.fromScale(1, 1)
+	exitHover.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+	exitHover.BackgroundTransparency = 0.9
+	exitHover.BorderSizePixel = 0
+	exitHover.Parent = exit
+	Instance.new("UICorner", exitHover).CornerRadius = UDim.new(1, 0)
 
-		button.Size = size
-		button.BackgroundTransparency = transparency
-		button.Active = enabled
-		button.Interactable = enabled
+	exit.MouseEnter:Connect(function()
+		exitHover.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+		exitHover.BackgroundTransparency = 0.85
+		exit.TextColor3 = Color3.fromRGB(255, 255, 255)
+		exit.TextTransparency = 0
+	end)
+	exit.MouseLeave:Connect(function()
+		exitHover.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+		exitHover.BackgroundTransparency = 0.9
+		exit.TextColor3 = Color3.fromRGB(150, 150, 150)
+		exit.TextTransparency = 0.3
+	end)
 
-		for _, child in ipairs(button:GetChildren()) do
-			if child:IsA("UIStroke") then
-				child.Transparency = transparency
-			end
-		end
-		if not enabled then
-			stroke:Clone().Parent = button
-		end
-	end
-
-	applyState(maximize, true)
-
-	local controlsList = {exit, minimize}
-	for _, button in pairs(controlsList) do
-		local buttonName = button.Name
-		local isEnabled = true
-
-		if Settings.DisabledWindowControls and table.find(Settings.DisabledWindowControls, buttonName) then
-			isEnabled = false
-		end
-
-		applyState(button, isEnabled)
-	end
-
-	controls.Parent = windowControls
-
+	-- Divider line below controls
 	local divider1 = Instance.new("Frame")
 	divider1.Name = "Divider"
 	divider1.AnchorPoint = Vector2.new(0, 1)
