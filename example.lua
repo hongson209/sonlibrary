@@ -1,435 +1,265 @@
-local SonLib = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua"))()
+--!nocheck
+--[[
+    ====================================================================
+    SonLibrary UI v2.5.0 - Production Example & Template Script
+    Repository: https://github.com/hongson209/sonlibrary
+    Raw Library: https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua
+    ====================================================================
+    Dùng template này để tích hợp SonLibrary vào bất kỳ Script / Hub nào:
+      - Tương thích 100% PC, Điện thoại (Mobile), Máy tính bảng (Tablet)
+      - Hỗ trợ đầy đủ components: Button, Toggle, Slider, Dropdown (Searchable),
+        MultiDropdown (Searchable), Input, Keybind, ColorPicker, Progress Bar,
+        Modal Dialog, Toast Notifications, Native Roblox Topbar Icon
+      - Smooth Thu gọn (Minimize) co lại 1 nửa chiều ngang mượt mà 144 FPS
+]]
 
-local Window = SonLib:Window({
-	Title = "SonLib Demo",
-	Subtitle = "Premium UI Library",
-	Size = UDim2.fromOffset(568, 350),
-	DragStyle = 1,
-	DisabledWindowControls = {},
-	ShowUserInfo = true,
-	Keybind = Enum.KeyCode.RightControl,
-	AcrylicBlur = true,
+-- [1] TẢI THƯ VIỆN (Loadstring từ GitHub hoặc file cục bộ)
+local SonLibrary = (function()
+    if _G.SonLibrary and _G.SonLibrary.CreateWindow then
+        return _G.SonLibrary
+    end
+    if typeof(getgenv) == "function" and getgenv().SonLibrary and getgenv().SonLibrary.CreateWindow then
+        return getgenv().SonLibrary
+    end
+
+    -- Thử load từ file nội bộ nếu có
+    local localFiles = {"sonlibrary.lua", "Library/sonlibrary.lua", "sonlibrary.luau", "Library/sonlibrary.luau"}
+    for _, path in ipairs(localFiles) do
+        if typeof(isfile) == "function" and isfile(path) and typeof(readfile) == "function" then
+            local ok, lib = pcall(function() return loadstring(readfile(path))() end)
+            if ok and lib and typeof(lib.CreateWindow) == "function" then
+                return lib
+            end
+        end
+    end
+
+    -- Tải trực tiếp từ Raw GitHub URL
+    local githubUrl = "https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua"
+    local rawCode = game:HttpGet(githubUrl)
+    return loadstring(rawCode)()
+end)()
+
+-- [2] KHỞI TẠO CỬA SỔ CHÍNH (CreateWindow)
+local Window = SonLibrary:CreateWindow({
+    Title = "SonHUB",
+    SubTitle = "Titan Edition",
+    AccentColor = Color3.fromRGB(0, 166, 255),       -- Màu chủ đề chính (RGB)
+    ToggleKey = Enum.KeyCode.RightControl,            -- Phím tắt bật/tắt menu trên PC
+    TopbarButton = true,                              -- Hiển thị nút tròn logo SonHUB trên Topbar Roblox
+    Profile = {
+        Enabled = true,                               -- Bật/tắt thẻ người dùng ở góc dưới Sidebar (false nếu muốn ẩn)
+        -- Title = "SonHUB Admin",                    -- Tùy chỉnh tên (mặc định lấy Tên hiển thị Roblox)
+        -- Subtitle = "VIP Lifetime",                 -- Tùy chỉnh dòng phụ (mặc định hiển thị bộ đếm giờ dùng)
+        -- Avatar = "rbxthumb://...",                -- Tùy chỉnh ảnh đại diện (mặc định avatar Roblox của bạn)
+    }
 })
 
-local globalSettings = {
-	UIBlurToggle = Window:GlobalSetting({
-		Name = "UI Blur",
-		Default = Window:GetAcrylicBlurState(),
-		Callback = function(bool)
-			Window:SetAcrylicBlurState(bool)
-			Window:Notify({
-				Title = Window.Settings.Title,
-				Description = (bool and "Enabled" or "Disabled") .. " UI Blur",
-				Lifetime = 5
-			})
-		end,
-	}),
-	NotificationToggler = Window:GlobalSetting({
-		Name = "Notifications",
-		Default = Window:GetNotificationsState(),
-		Callback = function(bool)
-			Window:SetNotificationsState(bool)
-			Window:Notify({
-				Title = Window.Settings.Title,
-				Description = (bool and "Enabled" or "Disabled") .. " Notifications",
-				Lifetime = 5
-			})
-		end,
-	}),
-	ShowUserInfo = Window:GlobalSetting({
-		Name = "Show User Info",
-		Default = Window:GetUserInfoState(),
-		Callback = function(bool)
-			Window:SetUserInfoState(bool)
-			Window:Notify({
-				Title = Window.Settings.Title,
-				Description = (bool and "Showing" or "Redacted") .. " User Info",
-				Lifetime = 5
-			})
-		end,
-	})
+-- [3] TẠO CÁC TAB NỘI DUNG (CreateTab)
+local MainTab = Window:CreateTab({
+    Title = "Tổng quan",
+    Icon = "rbxassetid://10723407389" -- Icon Lucide Home
+})
+
+local ConfigTab = Window:CreateTab({
+    Title = "Cấu hình",
+    Icon = "rbxassetid://10747373176" -- Icon Lucide Sliders
+})
+
+-- ====================================================================
+-- TAB 1: TỔNG QUAN (Main Tab)
+-- ====================================================================
+MainTab:CreateSection("Tính năng tự động")
+
+-- TOGGLE
+local autoFarmToggle = MainTab:CreateToggle({
+    Name = "Tự động kích hoạt",
+    Description = "Bật tính năng tự động chạy theo chu kỳ lặp lại",
+    Default = true,
+    Callback = function(state: boolean)
+        print("[SonHUB] Tự động kích hoạt:", state)
+    end
+})
+
+-- SLIDER
+local walkSpeedSlider = MainTab:CreateSlider({
+    Name = "Tốc độ di chuyển",
+    Description = "Tùy chỉnh tốc độ di chuyển nhân vật",
+    Min = 16,
+    Max = 250,
+    Default = 32,
+    Precision = 0,
+    Suffix = " studs",
+    Callback = function(val: number)
+        local character = game:GetService("Players").LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = val
+        end
+    end
+})
+
+MainTab:CreateSection("Chọn chế độ & đối tượng")
+
+-- DROPDOWN (Có ô tìm kiếm nhỏ tùy chọn Searchable = true)
+local targetModeDrop = MainTab:CreateDropdown({
+    Name = "Chế độ nhắm",
+    Description = "Lựa chọn chế độ khóa mục tiêu",
+    Options = {"Mục tiêu gần nhất", "Máu thấp nhất", "Vị trí con trỏ", "Ngẫu nhiên"},
+    Default = "Mục tiêu gần nhất",
+    Searchable = true, -- Ô tìm kiếm nhỏ gọn lọc thời gian thực
+    Callback = function(chosen: string)
+        print("[SonHUB] Chế độ nhắm hiện tại:", chosen)
+    end
+})
+
+-- MULTI-DROPDOWN (Chọn nhiều mục, có Searchable = true)
+local priorityTargets = MainTab:CreateMultiDropdown({
+    Name = "Mục tiêu ưu tiên",
+    Description = "Chọn một hoặc nhiều loại mục tiêu cần lọc",
+    Options = {"Người chơi", "Quái vật", "Boss", "Vật phẩm rơi", "NPC"},
+    Default = {"Người chơi", "Boss"},
+    Searchable = true,
+    Callback = function(list: {string})
+        print("[SonHUB] Danh sách ưu tiên:", table.concat(list, ", "))
+    end
+})
+
+-- PROGRESS BAR
+local dataProgress = MainTab:CreateProgress({
+    Name = "Tiến độ tải dữ liệu",
+    Description = "Trạng thái nạp cấu hình hệ thống",
+    Default = 75
+})
+
+MainTab:CreateSection("Tương tác & Thông báo")
+
+-- BUTTON: Mở Modal Confirmation Dialog (Hộp thoại xác nhận)
+MainTab:CreateButton({
+    Name = "Mở hộp thoại xác nhận",
+    Description = "Kiểm tra popup xác nhận trước khi thực thi",
+    Callback = function()
+        Window:CreateDialog({
+            Title = "Xác nhận hành động",
+            Content = "Bạn có chắc chắn muốn áp dụng các thiết lập này cho SonHUB?",
+            Buttons = {
+                {
+                    Title = "Hủy bỏ",
+                    Style = "CardHover"
+                },
+                {
+                    Title = "Xác nhận",
+                    Style = "Primary",
+                    Callback = function()
+                        SonLibrary:Notify({
+                            Title = "SonHUB",
+                            Content = "Thao tác đã được xác nhận thành công!",
+                            Duration = 3,
+                            Type = "Success"
+                        })
+                    end
+                }
+            }
+        })
+    end
+})
+
+-- BUTTON: Thử nghiệm Toast Notification
+MainTab:CreateButton({
+    Name = "Thử nghiệm thông báo Toast",
+    Description = "Bấm để kiểm tra thông báo Toast glassmorphic",
+    Callback = function()
+        SonLibrary:Notify({
+            Title = "SonHUB",
+            Content = "Thao tác thông báo đã được kích hoạt!",
+            Duration = 3.5,
+            Type = "Success" -- Hỗ trợ: "Info", "Success", "Warning", "Danger"
+        })
+    end
+})
+
+-- ====================================================================
+-- TAB 2: CẤU HÌNH (Config Tab)
+-- ====================================================================
+ConfigTab:CreateSection("Cấu hình nâng cao")
+
+-- INPUT (Text box)
+ConfigTab:CreateInput({
+    Name = "Tên mục tiêu cụ thể",
+    Description = "Nhập tên người chơi muốn ưu tiên",
+    Placeholder = "Nhập tên người chơi...",
+    Default = "",
+    Callback = function(text: string, enterPressed: boolean)
+        print("[SonHUB] Tên mục tiêu nhập vào:", text, "(Enter:", enterPressed, ")")
+    end
+})
+
+-- KEYBIND
+ConfigTab:CreateKeybind({
+    Name = "Phím tắt nhanh",
+    Description = "Nhấn để gán phím kích hoạt chức năng",
+    Default = Enum.KeyCode.E,
+    Callback = function(key: Enum.KeyCode)
+        print("[SonHUB] Phím tắt đã đổi sang:", key.Name)
+    end
+})
+
+-- COLOR PICKER
+ConfigTab:CreateColorPicker({
+    Name = "Màu chủ đề ESP",
+    Default = Color3.fromRGB(0, 166, 255),
+    Callback = function(color: Color3)
+        print("[SonHUB] Màu đã chọn (R, G, B):", math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255))
+    end
+})
+
+-- PARAGRAPH
+ConfigTab:CreateParagraph({
+    Title = "Thông tin hệ thống",
+    Content = "SonLibrary v2.5.0 - Tối ưu hoàn hảo cho Điện thoại, Máy tính bảng và PC. Hỗ trợ tự động co giãn theo tỉ lệ màn hình và thu nhỏ 1/2 chiều ngang mượt mà."
+})
+
+-- ====================================================================
+-- TAB 3: CÀI ĐẶT HỆ THỐNG (Settings Tab)
+-- ====================================================================
+local SettingsTab = Window:CreateSettingsTab()
+SettingsTab:CreateSection("Cài đặt chung")
+
+SettingsTab:CreateKeybind({
+    Name = "Phím mở / ẩn Menu",
+    Default = Enum.KeyCode.RightControl,
+    Callback = function(k: Enum.KeyCode)
+        print("[SonHUB] Toggle Menu Key:", k.Name)
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "Sao chép link Discord",
+    Description = "Tham gia server cộng đồng hỗ trợ SonHUB",
+    Callback = function()
+        if typeof(setclipboard) == "function" then
+            setclipboard("https://discord.gg/htBURFNyhV")
+        end
+        SonLibrary:Notify({
+            Title = "SonHUB",
+            Content = "Đã sao chép link Discord vào bộ nhớ tạm!",
+            Duration = 2.8,
+            Type = "Success"
+        })
+    end
+})
+
+-- [4] GỬI THÔNG BÁO CHÀO MỪNG KHI LOAD XONG
+SonLibrary:Notify({
+    Title = "SonHUB",
+    Content = "Giao diện đã tải thành công!",
+    Duration = 3.2,
+    Type = "Success"
+})
+
+return {
+    Window = Window,
+    MainTab = MainTab,
+    ConfigTab = ConfigTab,
+    SettingsTab = SettingsTab,
+    SonLibrary = SonLibrary
 }
-
-local tabGroups = {
-	TabGroup1 = Window:TabGroup()
-}
-
-local tabs = {
-	Main = tabGroups.TabGroup1:Tab({ Name = "Demo", Image = "lucide/layout-dashboard" }),
-}
-tabGroups.TabGroup1:Divider()
-tabs.Misc = tabGroups.TabGroup1:Tab({ Name = "Misc", Image = "lucide/settings" })
-tabs.Settings = tabGroups.TabGroup1:Tab({ Name = "Config", Image = "lucide/sliders-horizontal" })
-
-local sections = {
-	MainSection1 = tabs.Main:Section({}),
-	MainSection2 = tabs.Main:Section({ Side = "Right" }),
-}
-
-sections.MainSection1:Header({
-	Name = SonLib:Gradient("Header #1", Color3.fromRGB(255, 180, 50), Color3.fromRGB(255, 80, 80))
-})
-
-sections.MainSection1:Button({
-	Name = "Button",
-	Callback = function()
-		Window:Dialog({
-			Title = Window.Settings.Title,
-			Description = "SonLib Demo",
-			Buttons = {
-				{
-					Name = "Confirm",
-					Callback = function()
-						print("Confirmed!")
-					end,
-				},
-				{
-					Name = "Cancel"
-				}
-			}
-		})
-	end,
-})
-
-sections.MainSection1:Input({
-	Name = "Input",
-	Placeholder = "Input",
-	AcceptedCharacters = "All",
-	Callback = function(input)
-		Window:Notify({
-			Title = Window.Settings.Title,
-			Description = "Successfully set input to " .. input
-		})
-	end,
-	onChanged = function(input)
-		print("Input is now " .. input)
-	end,
-}, "Input")
-
-local DemoSlider = sections.MainSection1:Slider({
-	Name = "Slider",
-	Default = 50,
-	Minimum = 0,
-	Maximum = 100,
-	DisplayMethod = "Percent",
-	Precision = 0,
-	Callback = function(Value)
-		print("Changed to ".. Value)
-	end
-}, "Slider")
-
-sections.MainSection1:Toggle({
-	Name = "Toggle",
-	Default = false,
-	Callback = function(value)
-		Window:Notify({
-			Title = Window.Settings.Title,
-			Description = (value and "Enabled " or "Disabled ") .. "Toggle"
-		})
-	end,
-}, "Toggle")
-
-sections.MainSection1:Toggle({
-	Name = '<font color="rgb(73, 230, 133)">Show Slider</font>',
-	Default = true,
-	Callback = function(value)
-		DemoSlider:SetVisibility(value)
-	end,
-})
-
-sections.MainSection1:Button({
-	Name = "Bold Button",
-	Bold = true,
-	Callback = function() end,
-})
-
-sections.MainSection1:Toggle({
-	Name = "Bold Toggle",
-	Bold = true,
-	Default = false,
-	Callback = function() end,
-})
-
-sections.MainSection1:Label({
-	Text = "Bold Label",
-	Bold = true,
-})
-
-sections.MainSection1:Keybind({
-	Name = "Keybind",
-	Blacklist = false,
-	Callback = function(binded)
-		Window:Notify({
-			Title = "Demo Window",
-			Description = "Pressed keybind - "..tostring(binded.Name),
-			Lifetime = 3
-		})
-	end,
-	onBinded = function(bind)
-		Window:Notify({
-			Title = "Demo Window",
-			Description = "Successfully Binded Keybind to - "..tostring(bind.Name),
-			Lifetime = 3
-		})
-	end,
-}, "Keybind")
-
-sections.MainSection1:Colorpicker({
-	Name = "Colorpicker",
-	Default = Color3.fromRGB(0, 255, 255),
-	Callback = function(color)
-		print("Color: ", color)
-	end,
-}, "Colorpicker")
-
-local alphaColorPicker = sections.MainSection1:Colorpicker({
-	Name = "Transparency Colorpicker",
-	Default = Color3.fromRGB(255,0,0),
-	Alpha = 0,
-	Callback = function(color, alpha)
-		print("Color: ", color, " Alpha: ", alpha)
-	end,
-}, "TransparencyColorpicker")
-
-local rainbowActive
-local rainbowConnection
-local hue = 0
-
-sections.MainSection1:Toggle({
-	Name = "Rainbow",
-	Default = false,
-	Callback = function(value)
-		rainbowActive = value
-
-		if rainbowActive then
-			rainbowConnection = game:GetService("RunService").RenderStepped:Connect(function(deltaTime)
-				hue = (hue + deltaTime * 0.1) % 1
-				alphaColorPicker:SetColor(Color3.fromHSV(hue, 1, 1))
-			end)
-		elseif rainbowConnection then
-			rainbowConnection:Disconnect()
-			rainbowConnection = nil
-		end
-	end,
-}, "RainbowToggle")
-
-local optionTable = {
-	"Apple",
-	"Banana",
-	"Orange",
-	"Grapes",
-	"Pineapple",
-	"Mango",
-	"Strawberry",
-	"Blueberry",
-	"Watermelon",
-	"Peach"
-}
-
-local Dropdown = sections.MainSection1:Dropdown({
-	Name = "Dropdown",
-	Multi = false,
-	Required = true,
-	Options = optionTable,
-	Default = 1,
-	Callback = function(Value)
-		print("Dropdown changed: ".. Value)
-	end,
-}, "Dropdown")
-
-local MultiDropdown = sections.MainSection1:Dropdown({
-	Name = "Multi Dropdown",
-	Search = true,
-	Multi = true,
-	Required = false,
-	Options = optionTable,
-	Default = {"Apple", "Orange"},
-	Callback = function(Value)
-		local Values = {}
-		for Value, State in next, Value do
-			table.insert(Values, Value)
-		end
-		print("Mutlidropdown changed:", table.concat(Values, ", "))
-	end,
-}, "MultiDropdown")
-
-sections.MainSection1:Button({
-	Name = "Update Selection",
-	Callback = function()
-		Dropdown:UpdateSelection("Grapes")
-		MultiDropdown:UpdateSelection({"Banana", "Pineapple"})
-	end,
-})
-
-sections.MainSection1:Header({
-	Text = "Header #2"
-})
-
-sections.MainSection1:Paragraph({
-	Header = "Paragraph",
-	Body = "Paragraph body"
-})
-
-sections.MainSection1:SubLabel({
-	Text = "Sub-Label"
-})
-
-local DemoLabel = sections.MainSection1:Label({
-	Text = '<font color="rgb(73, 230, 133)">Label</font>'
-})
-
-sections.MainSection2:Header({
-	Text = "Right Section"
-})
-
-sections.MainSection2:Toggle({
-	Name = "Option A",
-	Default = false,
-	Callback = function(value) end,
-})
-
-sections.MainSection2:Toggle({
-	Name = "Option B",
-	Default = true,
-	Callback = function(value) end,
-})
-
-sections.MainSection2:Slider({
-	Name = "Value",
-	Default = 50,
-	Minimum = 0,
-	Maximum = 100,
-	DisplayMethod = "Percent",
-	Precision = 0,
-	Callback = function(value) end,
-})
-
-sections.MainSection2:Button({
-	Name = "Right Button",
-	Callback = function() end,
-})
-
-SonLib:SetFolder("SonLib")
-
-local watermark = SonLib:Watermark({ Name = "SonLib Demo", Version = "v1.0.0" })
-
-local fpsCount, elapsed = 0, 0
-RunService.RenderStepped:Connect(function(dt)
-	fpsCount += 1
-	elapsed += dt
-	if elapsed >= 0.5 then
-		watermark:Set("FPS", math.round(fpsCount / elapsed) .. " fps")
-		fpsCount = 0
-		elapsed = 0
-	end
-end)
-
-task.spawn(function()
-	local subtitleText = "Premium UI Library"
-	while not unloaded do
-		for i = 1, #subtitleText do
-			if unloaded then break end
-			Window:SetSubtitle(SonLib:Gradient(subtitleText:sub(1, i), {Color3.fromRGB(73, 230, 133), Color3.fromRGB(100, 150, 255), Color3.fromRGB(255, 100, 180)}))
-			task.wait(0.08)
-		end
-		task.wait(1.5)
-		for i = #subtitleText, 0, -1 do
-			if unloaded then break end
-			Window:SetSubtitle(SonLib:Gradient(subtitleText:sub(1, i), {Color3.fromRGB(73, 230, 133), Color3.fromRGB(100, 150, 255), Color3.fromRGB(255, 100, 180)}))
-			task.wait(0.04)
-		end
-		task.wait(0.5)
-	end
-end)
-
-local miscSection = tabs.Misc:Section({})
-
-miscSection:Dropdown({
-	Name = "Theme",
-	Options = SonLib:GetThemes(),
-	Callback = function(value)
-		SonLib:SetTheme(value)
-	end,
-})
-
-miscSection:Slider({
-	Name = "Window Size",
-	Default = 50,
-	Minimum = 0,
-	Maximum = 100,
-	DisplayMethod = "Percent",
-	Precision = 0,
-	Callback = function(value)
-		local t = value / 100
-		Window:SetSize(UDim2.fromOffset(400 + (1000 - 400) * t, 250 + (800 - 250) * t))
-	end,
-})
-
-miscSection:Toggle({
-	Name = "Lock Slider",
-	Default = false,
-	Callback = function(value)
-		if value then
-			DemoSlider:Lock()
-		else
-			DemoSlider:Unlock()
-		end
-	end,
-})
-
-miscSection:Toggle({
-	Name = "User Info",
-	Default = true,
-	Callback = function(value)
-		Window:SetUserInfoState(value)
-	end,
-})
-
-miscSection:Toggle({
-	Name = "Watermark",
-	Default = true,
-	Callback = function(value)
-		watermark:SetVisible(value)
-	end,
-})
-
-miscSection:Button({
-	Name = "Destroy Watermark",
-	Callback = function()
-		watermark:Destroy()
-	end,
-})
-
-miscSection:Button({
-	Name = "Destroy Label",
-	Callback = function()
-		DemoLabel:Destroy()
-	end,
-})
-
-miscSection:Input({
-	Name = "Rename Label",
-	Placeholder = "New label text...",
-	AcceptedCharacters = "All",
-	Callback = function(text)
-		if text ~= "" then
-			DemoLabel:SetName(text)
-		end
-	end,
-})
-
-miscSection:Button({
-	Name = "Unload",
-	Callback = function()
-		Window:Unload()
-	end,
-})
-
-tabs.Settings:InsertConfigSection()
-
-Window.onUnloaded(function()
-	print("Unloaded!")
-end)
-
-tabs.Main:Select()
-SonLib:LoadAutoLoadConfig()
