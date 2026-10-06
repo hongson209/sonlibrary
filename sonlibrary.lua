@@ -2580,9 +2580,9 @@ function SonLibrary:CreateWindow(config: {
         end
 
         -- PARAGRAPH
-        function Tab:CreateParagraph(pConfig: {Title: string, Content: string})
+        function Tab:CreateParagraph(pConfig: {Title: string?, Content: string?, Desc: string?})
             local title = pConfig.Title or "Notice"
-            local text = pConfig.Content or ""
+            local content = pConfig.Content or pConfig.Desc or ""
 
             local Card = Instance.new("Frame")
             Card.Name = "Para_" .. title
@@ -2628,15 +2628,56 @@ function SonLibrary:CreateWindow(config: {
             contentLbl.Position = UDim2.new(0, 0, 0, 18)
             contentLbl.BackgroundTransparency = 1
             contentLbl.Font = Enum.Font.Gotham
-            contentLbl.Text = text
+            contentLbl.Text = content
             contentLbl.TextColor3 = theme.TextMuted
             contentLbl.TextSize = 12
             contentLbl.TextWrapped = true
             contentLbl.TextXAlignment = Enum.TextXAlignment.Left
             contentLbl.Parent = Card
 
-            return Card
+            local ParaObj = {
+                Card = Card,
+                ElementFrame = Card,
+                Instance = Card,
+                SetTitle = function(_, newTitle: string)
+                    titleLbl.Text = tostring(newTitle or "")
+                end,
+                SetContent = function(_, newContent: string)
+                    contentLbl.Text = tostring(newContent or "")
+                end,
+                SetDesc = function(_, newDesc: string)
+                    contentLbl.Text = tostring(newDesc or "")
+                end,
+                Set = function(self, newTitleOrCfg: any, newContent: string?)
+                    if type(newTitleOrCfg) == "table" then
+                        if newTitleOrCfg.Title ~= nil then titleLbl.Text = tostring(newTitleOrCfg.Title) end
+                        local c = newTitleOrCfg.Content or newTitleOrCfg.Desc
+                        if c ~= nil then contentLbl.Text = tostring(c) end
+                    else
+                        if newTitleOrCfg ~= nil then titleLbl.Text = tostring(newTitleOrCfg) end
+                        if newContent ~= nil then contentLbl.Text = tostring(newContent) end
+                    end
+                end,
+            }
+
+            return setmetatable(ParaObj, {
+                __index = Card,
+                __newindex = Card,
+            })
         end
+
+        Tab.Paragraph = Tab.CreateParagraph
+        Tab.Toggle = Tab.CreateToggle
+        Tab.Slider = Tab.CreateSlider
+        Tab.Dropdown = Tab.CreateDropdown
+        Tab.MultiDropdown = Tab.CreateMultiDropdown
+        Tab.Button = Tab.CreateButton
+        Tab.Keybind = Tab.CreateKeybind
+        Tab.Input = Tab.CreateInput
+        Tab.Progress = Tab.CreateProgress
+        Tab.Section = Tab.CreateSection
+        Tab.Divider = Tab.CreateDivider
+        Tab.ColorPicker = Tab.CreateColorPicker
 
         return Tab
     end
@@ -2804,13 +2845,29 @@ function SonLibrary:CreateWindow(config: {
         end
     end
 
-    function Window:Notify(nConfig)
-        return SonLibrary:Notify(nConfig)
+    function Window:SetToggleKey(newKey: Enum.KeyCode)
+        toggleKey = newKey
     end
 
-    function Window:Dialog(dConfig)
-        return Window:CreateDialog(dConfig)
+    function Window:SetSubTitle(newSub: string)
+        if BrandSub then
+            BrandSub.Text = newSub
+        end
     end
+
+    function Window:SetAuthor(newAuthor: string)
+        Window:SetSubTitle(newAuthor)
+    end
+
+    function Window:Close()
+        setWindowVisible(false)
+    end
+
+    function Window:Open()
+        setWindowVisible(true)
+    end
+
+    Window.Tab = Window.CreateTab
 
     table.insert(SonLibrary.ActiveWindows, Window)
     return Window
