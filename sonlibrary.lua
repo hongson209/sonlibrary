@@ -17,6 +17,53 @@ local LocalPlayer = Players.LocalPlayer
 local SonLibrary = {
     Version = "2.5.0",
     ActiveWindows = {},
+    FontPresets = {
+        Modern = {
+            Font = (pcall(function() return Enum.Font.BuilderSans end) and Enum.Font.BuilderSans) or Enum.Font.SourceSans,
+            FontMedium = (pcall(function() return Enum.Font.BuilderSansMedium end) and Enum.Font.BuilderSansMedium) or Enum.Font.SourceSansSemibold,
+            FontBold = (pcall(function() return Enum.Font.BuilderSansBold end) and Enum.Font.BuilderSansBold) or Enum.Font.SourceSansBold,
+        },
+        Playful = { -- Cutepunch / Fredoka / Cartoon Rounded style
+            Font = Enum.Font.FredokaOne,
+            FontMedium = Enum.Font.FredokaOne,
+            FontBold = Enum.Font.FredokaOne,
+        },
+        Cutepunch = {
+            Font = Enum.Font.FredokaOne,
+            FontMedium = Enum.Font.FredokaOne,
+            FontBold = Enum.Font.LuckiestGuy,
+        },
+        Cartoon = {
+            Font = Enum.Font.Kalam,
+            FontMedium = Enum.Font.Kalam,
+            FontBold = Enum.Font.LuckiestGuy,
+        },
+        Handwritten = {
+            Font = Enum.Font.PatrickHand,
+            FontMedium = Enum.Font.PatrickHand,
+            FontBold = Enum.Font.PatrickHand,
+        },
+        Clean = {
+            Font = Enum.Font.SourceSans,
+            FontMedium = Enum.Font.SourceSansSemibold,
+            FontBold = Enum.Font.SourceSansBold,
+        },
+        Code = {
+            Font = Enum.Font.Code,
+            FontMedium = Enum.Font.Code,
+            FontBold = Enum.Font.RobotoMono,
+        },
+        SciFi = {
+            Font = Enum.Font.Highway,
+            FontMedium = Enum.Font.Highway,
+            FontBold = Enum.Font.SciFi,
+        },
+        Elegant = {
+            Font = Enum.Font.Merriweather,
+            FontMedium = Enum.Font.Merriweather,
+            FontBold = Enum.Font.Bodoni,
+        },
+    },
     DefaultTheme = {
         Background = Color3.fromRGB(15, 17, 24),
         BackgroundTransparency = 0.12,
@@ -31,11 +78,14 @@ local SonLibrary = {
         Accent = Color3.fromRGB(0, 166, 255),
         AccentGlow = Color3.fromRGB(0, 166, 255),
         Text = Color3.fromRGB(245, 247, 252),
-        TextMuted = Color3.fromRGB(145, 155, 178),
-        TextDark = Color3.fromRGB(95, 105, 125),
+        TextMuted = Color3.fromRGB(160, 170, 195),
+        TextDark = Color3.fromRGB(115, 125, 145),
         Success = Color3.fromRGB(46, 204, 113),
         Warning = Color3.fromRGB(241, 196, 15),
         Danger = Color3.fromRGB(231, 76, 60),
+        Font = (pcall(function() return Enum.Font.BuilderSans end) and Enum.Font.BuilderSans) or Enum.Font.SourceSans,
+        FontMedium = (pcall(function() return Enum.Font.BuilderSansMedium end) and Enum.Font.BuilderSansMedium) or Enum.Font.SourceSansSemibold,
+        FontBold = (pcall(function() return Enum.Font.BuilderSansBold end) and Enum.Font.BuilderSansBold) or Enum.Font.SourceSansBold,
     }
 }
 
@@ -257,7 +307,7 @@ function SonLibrary:Notify(config: {Title: string?, Content: string?, Message: s
     titleLbl.Name = "Title"
     titleLbl.Size = UDim2.new(1, 0, 0, 20)
     titleLbl.BackgroundTransparency = 1
-    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.Font = theme.FontBold or Enum.Font.BuilderSansBold
     titleLbl.Text = title
     titleLbl.TextColor3 = theme.Text
     titleLbl.TextSize = (isSmall or isMobile) and 14 or 15
@@ -270,7 +320,7 @@ function SonLibrary:Notify(config: {Title: string?, Content: string?, Message: s
     contentLbl.Size = UDim2.new(1, 0, 0, 0)
     contentLbl.AutomaticSize = Enum.AutomaticSize.Y
     contentLbl.BackgroundTransparency = 1
-    contentLbl.Font = Enum.Font.GothamMedium
+    contentLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
     contentLbl.Text = message
     contentLbl.TextColor3 = theme.TextMuted
     contentLbl.TextSize = (isSmall or isMobile) and 13 or 13.5
@@ -331,7 +381,7 @@ function SonLibrary:Notify(config: {Title: string?, Content: string?, Message: s
         end)
     end
 
-    CloseBtn.MouseButton1Click:Connect(dismiss)
+    CloseBtn.Activated:Connect(dismiss)
 
     card.Position = UDim2.new(1, 380, 0, 0)
     tween(card, 0.32, {Position = UDim2.new(0, 0, 0, 0)}, Enum.EasingStyle.Quart)
@@ -375,6 +425,18 @@ function SonLibrary:CreateWindow(config: {
     end
     theme.Accent = accent
     theme.AccentGlow = accent
+
+    local fontCfg = config.FontFamily or config.FontPreset
+    if fontCfg and SonLibrary.FontPresets[fontCfg] then
+        local p = SonLibrary.FontPresets[fontCfg]
+        theme.Font = p.Font
+        theme.FontMedium = p.FontMedium
+        theme.FontBold = p.FontBold
+    elseif config.Font then
+        theme.Font = config.Font
+        theme.FontMedium = config.FontMedium or config.Font
+        theme.FontBold = config.FontBold or config.Font
+    end
 
     -- Responsive Viewport Calculations
     local camera = workspace.CurrentCamera
@@ -485,10 +547,10 @@ function SonLibrary:CreateWindow(config: {
     BrandTitle.Name = "BrandTitle"
     BrandTitle.Size = UDim2.new(1, 0, 0, 18)
     BrandTitle.BackgroundTransparency = 1
-    BrandTitle.Font = Enum.Font.GothamBold
+    BrandTitle.Font = theme.FontBold or Enum.Font.BuilderSansBold
     BrandTitle.Text = titleText
     BrandTitle.TextColor3 = theme.Text
-    BrandTitle.TextSize = isSmallScreen and 14 or 15
+    BrandTitle.TextSize = isSmallScreen and 15 or 16
     BrandTitle.TextXAlignment = Enum.TextXAlignment.Left
     BrandTitle.Parent = BrandContainer
 
@@ -497,10 +559,10 @@ function SonLibrary:CreateWindow(config: {
     BrandSub.Size = UDim2.new(1, 0, 0, 14)
     BrandSub.Position = UDim2.new(0, 0, 0, 18)
     BrandSub.BackgroundTransparency = 1
-    BrandSub.Font = Enum.Font.Gotham
+    BrandSub.Font = theme.Font or Enum.Font.BuilderSans
     BrandSub.Text = subTitleText
     BrandSub.TextColor3 = theme.Accent
-    BrandSub.TextSize = isSmallScreen and 9 or 10
+    BrandSub.TextSize = isSmallScreen and 11 or 12
     BrandSub.TextXAlignment = Enum.TextXAlignment.Left
     BrandSub.Parent = BrandContainer
 
@@ -605,10 +667,10 @@ function SonLibrary:CreateWindow(config: {
     UsernameLabel.Name = "Username"
     UsernameLabel.Size = UDim2.new(1, 0, 0, 16)
     UsernameLabel.BackgroundTransparency = 1
-    UsernameLabel.Font = Enum.Font.GothamBold
+    UsernameLabel.Font = theme.FontBold or Enum.Font.BuilderSansBold
     UsernameLabel.Text = profileTitle
     UsernameLabel.TextColor3 = theme.Text
-    UsernameLabel.TextSize = (SidebarWidth < 125) and 11 or 12
+    UsernameLabel.TextSize = (SidebarWidth < 125) and 12 or 13
     UsernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
     UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
     UsernameLabel.Parent = UserInfoCol
@@ -617,9 +679,9 @@ function SonLibrary:CreateWindow(config: {
     PlaytimeLabel.Name = "Playtime"
     PlaytimeLabel.Size = UDim2.new(1, 0, 0, 14)
     PlaytimeLabel.BackgroundTransparency = 1
-    PlaytimeLabel.Font = Enum.Font.GothamMedium
+    PlaytimeLabel.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
     PlaytimeLabel.TextColor3 = theme.Accent
-    PlaytimeLabel.TextSize = (SidebarWidth < 125) and 9 or 10
+    PlaytimeLabel.TextSize = (SidebarWidth < 125) and 11 or 12
     PlaytimeLabel.TextTruncate = Enum.TextTruncate.AtEnd
     PlaytimeLabel.TextXAlignment = Enum.TextXAlignment.Left
     PlaytimeLabel.Parent = UserInfoCol
@@ -664,10 +726,10 @@ function SonLibrary:CreateWindow(config: {
     CurrentTabTitle.Size = UDim2.new(1, -95, 1, 0)
     CurrentTabTitle.Position = UDim2.new(0, 16, 0, 0)
     CurrentTabTitle.BackgroundTransparency = 1
-    CurrentTabTitle.Font = Enum.Font.GothamBold
+    CurrentTabTitle.Font = theme.FontBold or Enum.Font.BuilderSansBold
     CurrentTabTitle.Text = "Home"
     CurrentTabTitle.TextColor3 = theme.Text
-    CurrentTabTitle.TextSize = 14
+    CurrentTabTitle.TextSize = 15
     CurrentTabTitle.TextXAlignment = Enum.TextXAlignment.Left
     CurrentTabTitle.Parent = Topbar
 
@@ -729,7 +791,7 @@ function SonLibrary:CreateWindow(config: {
             tween(btn, 0.15, {BackgroundColor3 = theme.Card, BackgroundTransparency = theme.CardTransparency})
             tween(icon, 0.15, {ImageColor3 = isClose and Color3.fromRGB(255, 110, 110) or theme.TextMuted})
         end)
-        btn.MouseButton1Click:Connect(callback)
+        btn.Activated:Connect(callback)
         return btn
     end
 
@@ -801,26 +863,23 @@ function SonLibrary:CreateWindow(config: {
     createControlButton("MinBtn", "rbxassetid://10734896206", 1, false, toggleMinimize)
 
     local isVisible = true
-    local isAnimating = false
 
     local function setWindowVisible(vis: boolean)
-        if isAnimating then return end
         if vis then
             isVisible = true
             WindowFrame.Visible = true
-            WindowScale.Scale = 0.93
-            tween(WindowScale, 0.22, {Scale = 1}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-            tween(WindowFrame, 0.18, {BackgroundTransparency = theme.BackgroundTransparency})
+            tween(WindowScale, 0.16, {Scale = 1}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+            tween(WindowFrame, 0.14, {BackgroundTransparency = theme.BackgroundTransparency})
         else
-            isAnimating = true
-            tween(WindowScale, 0.15, {Scale = 0.94}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-            local fade = tween(WindowFrame, 0.15, {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-            fade.Completed:Connect(function()
-                WindowFrame.Visible = false
-                WindowScale.Scale = 1
-                WindowFrame.BackgroundTransparency = theme.BackgroundTransparency
-                isVisible = false
-                isAnimating = false
+            isVisible = false
+            tween(WindowScale, 0.14, {Scale = 0.95}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+            local fade = tween(WindowFrame, 0.14, {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+            task.delay(0.15, function()
+                if not isVisible then
+                    WindowFrame.Visible = false
+                    WindowScale.Scale = 1
+                    WindowFrame.BackgroundTransparency = theme.BackgroundTransparency
+                end
             end)
         end
     end
@@ -898,7 +957,7 @@ function SonLibrary:CreateWindow(config: {
             tween(LogoImg, 0.15, {Size = UDim2.fromOffset(26, 26)})
         end)
 
-        ClickBtn.MouseButton1Click:Connect(function()
+        ClickBtn.Activated:Connect(function()
             setWindowVisible(not isVisible)
             tween(LogoImg, 0.1, {Size = UDim2.fromOffset(22, 22)}).Completed:Connect(function()
                 tween(LogoImg, 0.1, {Size = UDim2.fromOffset(26, 26)})
@@ -915,75 +974,52 @@ function SonLibrary:CreateWindow(config: {
         TopbarIconBtn = IconWidget
     end
 
-    -- SMOOTH DRAGGING SYSTEM (Zero Jitter, 144 FPS RenderStepped lerp)
+    -- HIGH-PERFORMANCE ZERO-LAG DRAGGING
     local isDragging = false
-    local dragStartMouse = Vector2.zero
-    local dragStartWindow = Vector2.zero
-    local targetPos = nil
+    local dragStart = Vector2.zero
+    local startPos = Vector2.zero
+    local dragMoveConn = nil
 
-    local function startDragging(input)
-        isDragging = true
-        dragStartMouse = Vector2.new(input.Position.X, input.Position.Y)
-        dragStartWindow = Vector2.new(WindowFrame.AbsolutePosition.X, WindowFrame.AbsolutePosition.Y)
-        targetPos = dragStartWindow
-    end
-
-    local function bindDrag(frame)
+    local function setupDragOn(frame)
         frame.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                startDragging(input)
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
+                isDragging = true
+                dragStart = Vector2.new(input.Position.X, input.Position.Y)
+                startPos = Vector2.new(WindowFrame.AbsolutePosition.X, WindowFrame.AbsolutePosition.Y)
+
+                if dragMoveConn then dragMoveConn:Disconnect() end
+                dragMoveConn = UserInputService.InputChanged:Connect(function(moveInput)
+                    if not isDragging then return end
+                    if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+                        local delta = Vector2.new(moveInput.Position.X, moveInput.Position.Y) - dragStart
+                        local curCamera = workspace.CurrentCamera
+                        local curVp = curCamera and curCamera.ViewportSize or Vector2.new(1920, 1080)
+                        local winW = WindowFrame.AbsoluteSize.X
+                        local nx = math.clamp(startPos.X + delta.X, -winW + 80, curVp.X - 80)
+                        local ny = math.clamp(startPos.Y + delta.Y, 0, curVp.Y - 40)
+                        WindowFrame.Position = UDim2.fromOffset(nx, ny)
+                    end
+                end)
+
+                local endConn
+                endConn = UserInputService.InputEnded:Connect(function(endInput)
+                    if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
                         isDragging = false
-                        targetPos = nil
+                        if dragMoveConn then
+                            dragMoveConn:Disconnect()
+                            dragMoveConn = nil
+                        end
+                        if endConn then
+                            endConn:Disconnect()
+                        end
                     end
                 end)
             end
         end)
     end
 
-    bindDrag(Topbar)
-    bindDrag(BrandContainer)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and isDragging then
-            local currentMouse = Vector2.new(input.Position.X, input.Position.Y)
-            local delta = currentMouse - dragStartMouse
-            local desiredX = dragStartWindow.X + delta.X
-            local desiredY = dragStartWindow.Y + delta.Y
-
-            local curCamera = workspace.CurrentCamera
-            local curVp = curCamera and curCamera.ViewportSize or Vector2.new(1920, 1080)
-            local winW = WindowFrame.AbsoluteSize.X
-            desiredX = math.clamp(desiredX, -winW + 80, curVp.X - 80)
-            desiredY = math.clamp(desiredY, 0, curVp.Y - 40)
-
-            targetPos = Vector2.new(desiredX, desiredY)
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            isDragging = false
-            targetPos = nil
-        end
-    end)
-
-    local dragRenderConn
-    dragRenderConn = RunService.RenderStepped:Connect(function(dt)
-        if not WindowFrame or not WindowFrame.Parent then
-            if dragRenderConn then dragRenderConn:Disconnect() end
-            return
-        end
-        if isDragging and targetPos then
-            local currentX = WindowFrame.AbsolutePosition.X
-            local currentY = WindowFrame.AbsolutePosition.Y
-            local factor = math.clamp(dt * 36, 0.3, 0.9)
-            local nx = currentX + (targetPos.X - currentX) * factor
-            local ny = currentY + (targetPos.Y - currentY) * factor
-            WindowFrame.Position = UDim2.fromOffset(nx, ny)
-        end
-    end)
+    setupDragOn(Topbar)
+    setupDragOn(BrandContainer)
 
     -- Dynamic Screen Boundary Guard & Adaptive Resizing (Rotation / Window resize)
     if camera then
@@ -1032,47 +1068,57 @@ function SonLibrary:CreateWindow(config: {
     }
 
     local function selectTab(tab)
-        if Window.CurrentTab == tab then return end
+        if not tab then return end
+        if Window.CurrentTab == tab and tab.Page and tab.Page.Visible then return end
 
         for _, t in ipairs(Window.Tabs) do
             if t.Page and t.Page.Parent then
-                t.Page.Visible = false
+                t.Page.Visible = (t == tab)
             end
             if t.Button then
-                tween(t.Button, 0.2, {BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 1})
+                tween(t.Button, 0.15, {BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 1})
                 if t.Button:FindFirstChild("Title") then
-                    tween(t.Button.Title, 0.2, {TextColor3 = theme.TextMuted})
+                    tween(t.Button.Title, 0.15, {TextColor3 = theme.TextMuted})
                 end
                 if t.Button:FindFirstChild("TabIcon") then
-                    tween(t.Button.TabIcon, 0.2, {ImageColor3 = theme.TextMuted})
+                    tween(t.Button.TabIcon, 0.15, {ImageColor3 = theme.TextMuted})
                 end
                 if t.Button:FindFirstChild("Indicator") then
-                    tween(t.Button.Indicator, 0.2, {BackgroundTransparency = 1, Size = UDim2.new(0, 3, 0, 0)})
+                    tween(t.Button.Indicator, 0.15, {BackgroundTransparency = 1, Size = UDim2.new(0, 3, 0, 0)})
                 end
             end
         end
 
         Window.CurrentTab = tab
-        CurrentTabTitle.Text = tab.Title
+        if CurrentTabTitle then
+            CurrentTabTitle.Text = tab.Title
+        end
 
         if tab.Button then
-            tween(tab.Button, 0.2, {BackgroundColor3 = theme.CardHover, BackgroundTransparency = 0.4})
+            tween(tab.Button, 0.15, {BackgroundColor3 = theme.CardHover, BackgroundTransparency = 0.4})
             if tab.Button:FindFirstChild("Title") then
-                tween(tab.Button.Title, 0.2, {TextColor3 = theme.Text})
+                tween(tab.Button.Title, 0.15, {TextColor3 = theme.Text})
             end
             if tab.Button:FindFirstChild("TabIcon") then
-                tween(tab.Button.TabIcon, 0.2, {ImageColor3 = theme.Text})
+                tween(tab.Button.TabIcon, 0.15, {ImageColor3 = theme.Text})
             end
             if tab.Button:FindFirstChild("Indicator") then
-                tween(tab.Button.Indicator, 0.2, {BackgroundTransparency = 0, Size = UDim2.new(0, 3, 0, 18)})
+                tween(tab.Button.Indicator, 0.15, {BackgroundTransparency = 0, Size = UDim2.new(0, 3, 0, 18)})
             end
         end
 
         if tab.Page then
             tab.Page.Visible = true
-            tab.Page.CanvasPosition = Vector2.new(0, 0)
-            tab.Page.Position = UDim2.new(0, 6, 0, 0)
-            tween(tab.Page, 0.25, {Position = UDim2.new(0, 0, 0, 0)})
+            tab.Page.Position = UDim2.new(0, 0, 0, 0)
+            local layout = tab.Page:FindFirstChildOfClass("UIListLayout")
+            if layout then
+                tab.Page.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 28)
+            end
+            task.defer(function()
+                if tab.Page and tab.Page.Parent and layout then
+                    tab.Page.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 28)
+                end
+            end)
         end
     end
 
@@ -1088,7 +1134,7 @@ function SonLibrary:CreateWindow(config: {
         Page.ScrollBarThickness = 3
         Page.ScrollBarImageColor3 = theme.Border
         Page.CanvasSize = UDim2.new(0, 0, 0, 0)
-        Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Page.AutomaticCanvasSize = Enum.AutomaticSize.None
         Page.Visible = false
         Page.Parent = ContentContainer
 
@@ -1096,6 +1142,13 @@ function SonLibrary:CreateWindow(config: {
         pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
         pageLayout.Padding = UDim.new(0, 8)
         pageLayout.Parent = Page
+
+        local function updateCanvas()
+            if Page and Page.Parent and pageLayout then
+                Page.CanvasSize = UDim2.new(0, 0, 0, pageLayout.AbsoluteContentSize.Y + 28)
+            end
+        end
+        pageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
 
         local pagePadding = Instance.new("UIPadding")
         pagePadding.PaddingRight = UDim.new(0, 8)
@@ -1147,10 +1200,10 @@ function SonLibrary:CreateWindow(config: {
         tabTitleLbl.Size = TabIcon and UDim2.new(1, -34, 1, 0) or UDim2.new(1, -24, 1, 0)
         tabTitleLbl.Position = TabIcon and UDim2.new(0, 32, 0, 0) or UDim2.new(0, 14, 0, 0)
         tabTitleLbl.BackgroundTransparency = 1
-        tabTitleLbl.Font = Enum.Font.GothamMedium
+        tabTitleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
         tabTitleLbl.Text = tabTitle
         tabTitleLbl.TextColor3 = theme.TextMuted
-        tabTitleLbl.TextSize = 13
+        tabTitleLbl.TextSize = 13.5
         tabTitleLbl.TextXAlignment = Enum.TextXAlignment.Left
         tabTitleLbl.Parent = TabBtn
 
@@ -1158,6 +1211,10 @@ function SonLibrary:CreateWindow(config: {
             Title = tabTitle,
             Button = TabBtn,
             Page = Page,
+            Container = Page,
+            GetContainer = function() return Page end,
+            GetPage = function() return Page end,
+            Select = function(self) selectTab(self) end,
         }
 
         TabBtn.MouseEnter:Connect(function()
@@ -1176,7 +1233,7 @@ function SonLibrary:CreateWindow(config: {
             end
         end)
 
-        TabBtn.MouseButton1Click:Connect(function()
+        TabBtn.Activated:Connect(function()
             selectTab(Tab)
         end)
 
@@ -1190,7 +1247,7 @@ function SonLibrary:CreateWindow(config: {
         function Tab:CreateSection(secTitle: string)
             local SectionFrame = Instance.new("Frame")
             SectionFrame.Name = "Section_" .. secTitle
-            SectionFrame.Size = UDim2.new(1, 0, 0, 24)
+            SectionFrame.Size = UDim2.new(1, 0, 0, 26)
             SectionFrame.BackgroundTransparency = 1
             SectionFrame.Parent = Page
 
@@ -1199,10 +1256,10 @@ function SonLibrary:CreateWindow(config: {
             SecText.Size = UDim2.new(0, 0, 1, 0)
             SecText.AutomaticSize = Enum.AutomaticSize.X
             SecText.BackgroundTransparency = 1
-            SecText.Font = Enum.Font.GothamBold
+            SecText.Font = theme.FontBold or Enum.Font.BuilderSansBold
             SecText.Text = string.upper(secTitle)
             SecText.TextColor3 = theme.Accent
-            SecText.TextSize = 11
+            SecText.TextSize = 12
             SecText.TextXAlignment = Enum.TextXAlignment.Left
             SecText.Parent = SectionFrame
 
@@ -1243,7 +1300,7 @@ function SonLibrary:CreateWindow(config: {
 
             local Card = Instance.new("TextButton")
             Card.Name = "Btn_" .. name
-            Card.Size = UDim2.new(1, 0, 0, desc and 46 or 36)
+            Card.Size = UDim2.new(1, 0, 0, desc and 48 or 38)
             Card.BackgroundColor3 = theme.Card
             Card.BackgroundTransparency = theme.CardTransparency
             Card.BorderSizePixel = 0
@@ -1264,25 +1321,25 @@ function SonLibrary:CreateWindow(config: {
             local titleLbl = Instance.new("TextLabel")
             titleLbl.Name = "Title"
             titleLbl.Size = UDim2.new(1, -40, 0, 18)
-            titleLbl.Position = UDim2.new(0, 12, 0, desc and 6 or 9)
+            titleLbl.Position = UDim2.new(0, 12, 0, desc and 6 or 10)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 14
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = Card
 
             if desc then
                 local descLbl = Instance.new("TextLabel")
                 descLbl.Name = "Desc"
-                descLbl.Size = UDim2.new(1, -40, 0, 14)
-                descLbl.Position = UDim2.new(0, 12, 0, 24)
+                descLbl.Size = UDim2.new(1, -40, 0, 15)
+                descLbl.Position = UDim2.new(0, 12, 0, 26)
                 descLbl.BackgroundTransparency = 1
-                descLbl.Font = Enum.Font.Gotham
+                descLbl.Font = theme.Font or Enum.Font.BuilderSans
                 descLbl.Text = desc
                 descLbl.TextColor3 = theme.TextMuted
-                descLbl.TextSize = 11
+                descLbl.TextSize = 12
                 descLbl.TextXAlignment = Enum.TextXAlignment.Left
                 descLbl.Parent = Card
             end
@@ -1292,7 +1349,7 @@ function SonLibrary:CreateWindow(config: {
             actionIcon.Size = UDim2.fromOffset(20, 20)
             actionIcon.Position = UDim2.new(1, -30, 0.5, -10)
             actionIcon.BackgroundTransparency = 1
-            actionIcon.Font = Enum.Font.GothamBold
+            actionIcon.Font = theme.FontBold or Enum.Font.BuilderSansBold
             actionIcon.Text = ">"
             actionIcon.TextColor3 = theme.TextDark
             actionIcon.TextSize = 13
@@ -1310,7 +1367,7 @@ function SonLibrary:CreateWindow(config: {
                 tween(actionIcon, 0.15, {TextColor3 = theme.TextDark})
             end)
 
-            Card.MouseButton1Click:Connect(function()
+            Card.Activated:Connect(function()
                 tween(Card, 0.08, {BackgroundColor3 = theme.CardActive}).Completed:Connect(function()
                     tween(Card, 0.12, {BackgroundColor3 = theme.CardHover})
                 end)
@@ -1329,7 +1386,7 @@ function SonLibrary:CreateWindow(config: {
 
             local Card = Instance.new("TextButton")
             Card.Name = "Toggle_" .. name
-            Card.Size = UDim2.new(1, 0, 0, desc and 46 or 38)
+            Card.Size = UDim2.new(1, 0, 0, desc and 48 or 40)
             Card.BackgroundColor3 = theme.Card
             Card.BackgroundTransparency = theme.CardTransparency
             Card.BorderSizePixel = 0
@@ -1350,25 +1407,25 @@ function SonLibrary:CreateWindow(config: {
             local titleLbl = Instance.new("TextLabel")
             titleLbl.Name = "Title"
             titleLbl.Size = UDim2.new(1, -64, 0, 18)
-            titleLbl.Position = UDim2.new(0, 12, 0, desc and 6 or 10)
+            titleLbl.Position = UDim2.new(0, 12, 0, desc and 6 or 11)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 14
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = Card
 
             if desc then
                 local descLbl = Instance.new("TextLabel")
                 descLbl.Name = "Desc"
-                descLbl.Size = UDim2.new(1, -64, 0, 14)
-                descLbl.Position = UDim2.new(0, 12, 0, 24)
+                descLbl.Size = UDim2.new(1, -64, 0, 15)
+                descLbl.Position = UDim2.new(0, 12, 0, 26)
                 descLbl.BackgroundTransparency = 1
-                descLbl.Font = Enum.Font.Gotham
+                descLbl.Font = theme.Font or Enum.Font.BuilderSans
                 descLbl.Text = desc
                 descLbl.TextColor3 = theme.TextMuted
-                descLbl.TextSize = 11
+                descLbl.TextSize = 12
                 descLbl.TextXAlignment = Enum.TextXAlignment.Left
                 descLbl.Parent = Card
             end
@@ -1420,7 +1477,7 @@ function SonLibrary:CreateWindow(config: {
                 tween(cardStroke, 0.15, {Color = theme.Border})
             end)
 
-            Card.MouseButton1Click:Connect(function()
+            Card.Activated:Connect(function()
                 updateToggle(not state, true)
             end)
 
@@ -1477,10 +1534,10 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Size = UDim2.new(1, -90, 0, 16)
             titleLbl.Position = UDim2.new(0, 12, 0, 6)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 13.5
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = Card
 
@@ -1489,10 +1546,10 @@ function SonLibrary:CreateWindow(config: {
             valueLbl.Size = UDim2.new(0, 70, 0, 16)
             valueLbl.Position = UDim2.new(1, -82, 0, 6)
             valueLbl.BackgroundTransparency = 1
-            valueLbl.Font = Enum.Font.GothamBold
+            valueLbl.Font = theme.FontBold or Enum.Font.BuilderSansBold
             valueLbl.Text = tostring(currentVal) .. suffix
             valueLbl.TextColor3 = theme.Accent
-            valueLbl.TextSize = 12
+            valueLbl.TextSize = 12.5
             valueLbl.TextXAlignment = Enum.TextXAlignment.Right
             valueLbl.Parent = Card
 
@@ -1535,6 +1592,8 @@ function SonLibrary:CreateWindow(config: {
             knobCorner.Parent = Knob
 
             local sliding = false
+            local moveConn = nil
+            local endConn = nil
 
             local function updateSlider(inputX: number)
                 local trackAbsolutePos = Track.AbsolutePosition.X
@@ -1557,17 +1616,22 @@ function SonLibrary:CreateWindow(config: {
                     sliding = true
                     updateSlider(input.Position.X)
 
-                    input.Changed:Connect(function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            sliding = false
+                    if moveConn then moveConn:Disconnect() end
+                    if endConn then endConn:Disconnect() end
+
+                    moveConn = UserInputService.InputChanged:Connect(function(moveInput)
+                        if sliding and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
+                            updateSlider(moveInput.Position.X)
                         end
                     end)
-                end
-            end)
 
-            UserInputService.InputChanged:Connect(function(input)
-                if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and sliding then
-                    updateSlider(input.Position.X)
+                    endConn = UserInputService.InputEnded:Connect(function(endInput)
+                        if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                            sliding = false
+                            if moveConn then moveConn:Disconnect() moveConn = nil end
+                            if endConn then endConn:Disconnect() endConn = nil end
+                        end
+                    end)
                 end
             end)
 
@@ -1637,10 +1701,10 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Size = UDim2.new(0.5, 0, 1, 0)
             titleLbl.Position = UDim2.new(0, 12, 0, 0)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 13.5
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = HeaderBtn
 
@@ -1649,10 +1713,10 @@ function SonLibrary:CreateWindow(config: {
             selectedLbl.Size = UDim2.new(0.5, -42, 1, 0)
             selectedLbl.Position = UDim2.new(0.5, 0, 0, 0)
             selectedLbl.BackgroundTransparency = 1
-            selectedLbl.Font = Enum.Font.Gotham
+            selectedLbl.Font = theme.Font or Enum.Font.BuilderSans
             selectedLbl.Text = current
             selectedLbl.TextColor3 = theme.Accent
-            selectedLbl.TextSize = 12
+            selectedLbl.TextSize = 12.5
             selectedLbl.TextXAlignment = Enum.TextXAlignment.Right
             selectedLbl.Parent = HeaderBtn
 
@@ -1661,10 +1725,10 @@ function SonLibrary:CreateWindow(config: {
             arrowIcon.Size = UDim2.fromOffset(20, 20)
             arrowIcon.Position = UDim2.new(1, -28, 0.5, -10)
             arrowIcon.BackgroundTransparency = 1
-            arrowIcon.Font = Enum.Font.GothamBold
+            arrowIcon.Font = theme.FontBold or Enum.Font.BuilderSansBold
             arrowIcon.Text = "v"
             arrowIcon.TextColor3 = theme.TextDark
-            arrowIcon.TextSize = 11
+            arrowIcon.TextSize = 12
             arrowIcon.Parent = HeaderBtn
 
             local SearchBox = nil
@@ -1702,12 +1766,12 @@ function SonLibrary:CreateWindow(config: {
                 SearchInput.Size = UDim2.new(1, -28, 1, 0)
                 SearchInput.Position = UDim2.new(0, 24, 0, 0)
                 SearchInput.BackgroundTransparency = 1
-                SearchInput.Font = Enum.Font.GothamMedium
+                SearchInput.Font = theme.Font or Enum.Font.BuilderSans
                 SearchInput.PlaceholderText = "Tìm kiếm..."
                 SearchInput.PlaceholderColor3 = theme.TextDark
                 SearchInput.Text = ""
                 SearchInput.TextColor3 = theme.Text
-                SearchInput.TextSize = 11
+                SearchInput.TextSize = 12
                 SearchInput.TextXAlignment = Enum.TextXAlignment.Left
                 SearchInput.ClearTextOnFocus = false
                 SearchInput.Parent = SearchBox
@@ -1787,9 +1851,9 @@ function SonLibrary:CreateWindow(config: {
                     optBtn.Size = UDim2.new(1, 0, 0, 26)
                     optBtn.BorderSizePixel = 0
                     optBtn.AutoButtonColor = false
-                    optBtn.Font = Enum.Font.Gotham
+                    optBtn.Font = theme.Font or Enum.Font.BuilderSans
                     optBtn.Text = "   " .. opt
-                    optBtn.TextSize = 12
+                    optBtn.TextSize = 12.5
                     optBtn.TextXAlignment = Enum.TextXAlignment.Left
                     optBtn.Parent = OptionList
 
@@ -1811,7 +1875,7 @@ function SonLibrary:CreateWindow(config: {
                         end
                     end)
 
-                    optBtn.MouseButton1Click:Connect(function()
+                    optBtn.Activated:Connect(function()
                         current = opt
                         selectedLbl.Text = current
                         updateOptionHighlights()
@@ -1829,7 +1893,7 @@ function SonLibrary:CreateWindow(config: {
             end
             refreshOptions()
 
-            HeaderBtn.MouseButton1Click:Connect(function()
+            HeaderBtn.Activated:Connect(function()
                 isOpen = not isOpen
                 tween(arrowIcon, 0.2, {Rotation = isOpen and 180 or 0})
                 if not isOpen and SearchInput then
@@ -1915,10 +1979,10 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Size = UDim2.new(0.5, 0, 1, 0)
             titleLbl.Position = UDim2.new(0, 12, 0, 0)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 13.5
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = HeaderBtn
 
@@ -1927,9 +1991,9 @@ function SonLibrary:CreateWindow(config: {
             selectedLbl.Size = UDim2.new(0.5, -42, 1, 0)
             selectedLbl.Position = UDim2.new(0.5, 0, 0, 0)
             selectedLbl.BackgroundTransparency = 1
-            selectedLbl.Font = Enum.Font.Gotham
+            selectedLbl.Font = theme.Font or Enum.Font.BuilderSans
             selectedLbl.TextColor3 = theme.Accent
-            selectedLbl.TextSize = 12
+            selectedLbl.TextSize = 12.5
             selectedLbl.TextXAlignment = Enum.TextXAlignment.Right
             selectedLbl.Parent = HeaderBtn
 
@@ -1938,10 +2002,10 @@ function SonLibrary:CreateWindow(config: {
             arrowIcon.Size = UDim2.fromOffset(20, 20)
             arrowIcon.Position = UDim2.new(1, -28, 0.5, -10)
             arrowIcon.BackgroundTransparency = 1
-            arrowIcon.Font = Enum.Font.GothamBold
+            arrowIcon.Font = theme.FontBold or Enum.Font.BuilderSansBold
             arrowIcon.Text = "v"
             arrowIcon.TextColor3 = theme.TextDark
-            arrowIcon.TextSize = 11
+            arrowIcon.TextSize = 12
             arrowIcon.Parent = HeaderBtn
 
             local SearchBox = nil
@@ -1979,12 +2043,12 @@ function SonLibrary:CreateWindow(config: {
                 SearchInput.Size = UDim2.new(1, -28, 1, 0)
                 SearchInput.Position = UDim2.new(0, 24, 0, 0)
                 SearchInput.BackgroundTransparency = 1
-                SearchInput.Font = Enum.Font.GothamMedium
+                SearchInput.Font = theme.Font or Enum.Font.BuilderSans
                 SearchInput.PlaceholderText = "Tìm kiếm..."
                 SearchInput.PlaceholderColor3 = theme.TextDark
                 SearchInput.Text = ""
                 SearchInput.TextColor3 = theme.Text
-                SearchInput.TextSize = 11
+                SearchInput.TextSize = 12
                 SearchInput.TextXAlignment = Enum.TextXAlignment.Left
                 SearchInput.ClearTextOnFocus = false
                 SearchInput.Parent = SearchBox
@@ -2084,8 +2148,8 @@ function SonLibrary:CreateWindow(config: {
                 optBtn.Size = UDim2.new(1, 0, 0, 26)
                 optBtn.BorderSizePixel = 0
                 optBtn.AutoButtonColor = false
-                optBtn.Font = Enum.Font.Gotham
-                optBtn.TextSize = 12
+                optBtn.Font = theme.Font or Enum.Font.BuilderSans
+                optBtn.TextSize = 12.5
                 optBtn.TextXAlignment = Enum.TextXAlignment.Left
                 optBtn.Parent = OptionList
 
@@ -2095,7 +2159,7 @@ function SonLibrary:CreateWindow(config: {
 
                 optionButtons[opt] = optBtn
 
-                optBtn.MouseButton1Click:Connect(function()
+                optBtn.Activated:Connect(function()
                     selectedMap[opt] = not selectedMap[opt]
                     updateOptionHighlights()
                     pcall(callback, getSelectedList())
@@ -2103,7 +2167,7 @@ function SonLibrary:CreateWindow(config: {
             end
             updateOptionHighlights()
 
-            HeaderBtn.MouseButton1Click:Connect(function()
+            HeaderBtn.Activated:Connect(function()
                 isOpen = not isOpen
                 tween(arrowIcon, 0.2, {Rotation = isOpen and 180 or 0})
                 if not isOpen and SearchInput then
@@ -2156,10 +2220,10 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Size = UDim2.new(1, -80, 0, 16)
             titleLbl.Position = UDim2.new(0, 12, 0, 6)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 13.5
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = Card
 
@@ -2168,10 +2232,10 @@ function SonLibrary:CreateWindow(config: {
             percentLbl.Size = UDim2.new(0, 70, 0, 16)
             percentLbl.Position = UDim2.new(1, -82, 0, 6)
             percentLbl.BackgroundTransparency = 1
-            percentLbl.Font = Enum.Font.GothamBold
+            percentLbl.Font = theme.FontBold or Enum.Font.BuilderSansBold
             percentLbl.Text = math.floor(current) .. "%"
             percentLbl.TextColor3 = theme.Accent
-            percentLbl.TextSize = 12
+            percentLbl.TextSize = 12.5
             percentLbl.TextXAlignment = Enum.TextXAlignment.Right
             percentLbl.Parent = Card
 
@@ -2246,10 +2310,10 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Size = UDim2.new(0.5, 0, 0, 18)
             titleLbl.Position = UDim2.new(0, 12, 0, desc and 6 or 11)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 13.5
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = Card
 
@@ -2259,10 +2323,10 @@ function SonLibrary:CreateWindow(config: {
                 descLbl.Size = UDim2.new(0.5, 0, 0, 14)
                 descLbl.Position = UDim2.new(0, 12, 0, 24)
                 descLbl.BackgroundTransparency = 1
-                descLbl.Font = Enum.Font.Gotham
+                descLbl.Font = theme.Font or Enum.Font.BuilderSans
                 descLbl.Text = desc
                 descLbl.TextColor3 = theme.TextMuted
-                descLbl.TextSize = 11
+                descLbl.TextSize = 12
                 descLbl.TextXAlignment = Enum.TextXAlignment.Left
                 descLbl.Parent = Card
             end
@@ -2290,12 +2354,12 @@ function SonLibrary:CreateWindow(config: {
             TextBox.Size = UDim2.new(1, -12, 1, 0)
             TextBox.Position = UDim2.new(0, 6, 0, 0)
             TextBox.BackgroundTransparency = 1
-            TextBox.Font = Enum.Font.Gotham
+            TextBox.Font = theme.Font or Enum.Font.BuilderSans
             TextBox.Text = default
             TextBox.PlaceholderText = placeholder
             TextBox.PlaceholderColor3 = theme.TextDark
             TextBox.TextColor3 = theme.Text
-            TextBox.TextSize = 12
+            TextBox.TextSize = 12.5
             TextBox.ClearTextOnFocus = false
             TextBox.Parent = BoxFrame
 
@@ -2348,10 +2412,10 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Size = UDim2.new(1, -100, 0, 18)
             titleLbl.Position = UDim2.new(0, 12, 0, desc and 6 or 10)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 13.5
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = Card
 
@@ -2361,10 +2425,10 @@ function SonLibrary:CreateWindow(config: {
                 descLbl.Size = UDim2.new(1, -100, 0, 14)
                 descLbl.Position = UDim2.new(0, 12, 0, 24)
                 descLbl.BackgroundTransparency = 1
-                descLbl.Font = Enum.Font.Gotham
+                descLbl.Font = theme.Font or Enum.Font.BuilderSans
                 descLbl.Text = desc
                 descLbl.TextColor3 = theme.TextMuted
-                descLbl.TextSize = 11
+                descLbl.TextSize = 12
                 descLbl.TextXAlignment = Enum.TextXAlignment.Left
                 descLbl.Parent = Card
             end
@@ -2376,10 +2440,10 @@ function SonLibrary:CreateWindow(config: {
             BindBtn.BackgroundColor3 = Color3.fromRGB(34, 38, 52)
             BindBtn.BorderSizePixel = 0
             BindBtn.AutoButtonColor = false
-            BindBtn.Font = Enum.Font.GothamBold
+            BindBtn.Font = theme.FontBold or Enum.Font.BuilderSansBold
             BindBtn.Text = currentKey.Name
             BindBtn.TextColor3 = theme.Accent
-            BindBtn.TextSize = 11
+            BindBtn.TextSize = 12
             BindBtn.Parent = Card
 
             local btnCorner = Instance.new("UICorner")
@@ -2392,7 +2456,7 @@ function SonLibrary:CreateWindow(config: {
             btnStroke.Transparency = 0.6
             btnStroke.Parent = BindBtn
 
-            BindBtn.MouseButton1Click:Connect(function()
+            BindBtn.Activated:Connect(function()
                 listening = true
                 BindBtn.Text = "..."
                 tween(btnStroke, 0.15, {Color = theme.Accent, Transparency = 0})
@@ -2457,10 +2521,10 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Size = UDim2.new(1, -70, 1, 0)
             titleLbl.Position = UDim2.new(0, 12, 0, 0)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamMedium
+            titleLbl.Font = theme.FontMedium or Enum.Font.BuilderSansMedium
             titleLbl.Text = name
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 13.5
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = HeaderBtn
 
@@ -2503,10 +2567,10 @@ function SonLibrary:CreateWindow(config: {
                 local chLbl = Instance.new("TextLabel")
                 chLbl.Size = UDim2.fromOffset(20, 22)
                 chLbl.BackgroundTransparency = 1
-                chLbl.Font = Enum.Font.GothamBold
+                chLbl.Font = theme.FontBold or Enum.Font.BuilderSansBold
                 chLbl.Text = chName
                 chLbl.TextColor3 = chColor
-                chLbl.TextSize = 11
+                chLbl.TextSize = 12
                 chLbl.Parent = chFrame
 
                 local track = Instance.new("TextButton")
@@ -2533,6 +2597,9 @@ function SonLibrary:CreateWindow(config: {
                 fCorner.Parent = fill
 
                 local isSliding = false
+                local moveConn = nil
+                local endConn = nil
+
                 local function updateVal(xPos: number)
                     local alpha = math.clamp((xPos - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
                     local val = math.floor(alpha * 255)
@@ -2544,15 +2611,23 @@ function SonLibrary:CreateWindow(config: {
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         isSliding = true
                         updateVal(input.Position.X)
-                        input.Changed:Connect(function()
-                            if input.UserInputState == Enum.UserInputState.End then isSliding = false end
-                        end)
-                    end
-                end)
 
-                UserInputService.InputChanged:Connect(function(input)
-                    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and isSliding then
-                        updateVal(input.Position.X)
+                        if moveConn then moveConn:Disconnect() end
+                        if endConn then endConn:Disconnect() end
+
+                        moveConn = UserInputService.InputChanged:Connect(function(moveInput)
+                            if isSliding and (moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch) then
+                                updateVal(moveInput.Position.X)
+                            end
+                        end)
+
+                        endConn = UserInputService.InputEnded:Connect(function(endInput)
+                            if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                                isSliding = false
+                                if moveConn then moveConn:Disconnect() moveConn = nil end
+                                if endConn then endConn:Disconnect() endConn = nil end
+                            end
+                        end)
                     end
                 end)
             end
@@ -2571,7 +2646,7 @@ function SonLibrary:CreateWindow(config: {
             createChannelSlider("G", curG, Color3.fromRGB(75, 255, 120), function(v) curG = v syncColor() end)
             createChannelSlider("B", curB, Color3.fromRGB(75, 150, 255), function(v) curB = v syncColor() end)
 
-            HeaderBtn.MouseButton1Click:Connect(function()
+            HeaderBtn.Activated:Connect(function()
                 isOpen = not isOpen
                 tween(Card, 0.25, {Size = isOpen and UDim2.new(1, 0, 0, 140) or UDim2.new(1, 0, 0, 42)})
             end)
@@ -2614,10 +2689,11 @@ function SonLibrary:CreateWindow(config: {
             titleLbl.Name = "Title"
             titleLbl.Size = UDim2.new(1, 0, 0, 16)
             titleLbl.BackgroundTransparency = 1
-            titleLbl.Font = Enum.Font.GothamBold
+            titleLbl.Font = theme.FontBold or Enum.Font.BuilderSansBold
             titleLbl.Text = title
             titleLbl.TextColor3 = theme.Text
-            titleLbl.TextSize = 13
+            titleLbl.TextSize = 14
+            titleLbl.RichText = true
             titleLbl.TextXAlignment = Enum.TextXAlignment.Left
             titleLbl.Parent = Card
 
@@ -2627,10 +2703,11 @@ function SonLibrary:CreateWindow(config: {
             contentLbl.AutomaticSize = Enum.AutomaticSize.Y
             contentLbl.Position = UDim2.new(0, 0, 0, 18)
             contentLbl.BackgroundTransparency = 1
-            contentLbl.Font = Enum.Font.Gotham
+            contentLbl.Font = theme.Font or Enum.Font.BuilderSans
             contentLbl.Text = content
             contentLbl.TextColor3 = theme.TextMuted
-            contentLbl.TextSize = 12
+            contentLbl.TextSize = 13
+            contentLbl.RichText = true
             contentLbl.TextWrapped = true
             contentLbl.TextXAlignment = Enum.TextXAlignment.Left
             contentLbl.Parent = Card
@@ -2735,10 +2812,10 @@ function SonLibrary:CreateWindow(config: {
         titleL.Size = UDim2.new(1, -24, 0, 22)
         titleL.Position = UDim2.new(0, 14, 0, 12)
         titleL.BackgroundTransparency = 1
-        titleL.Font = Enum.Font.GothamBold
+        titleL.Font = theme.FontBold or Enum.Font.BuilderSansBold
         titleL.Text = dTitle
         titleL.TextColor3 = theme.Text
-        titleL.TextSize = 14
+        titleL.TextSize = 15
         titleL.TextXAlignment = Enum.TextXAlignment.Left
         titleL.ZIndex = 52
         titleL.Parent = DialogBox
@@ -2747,10 +2824,10 @@ function SonLibrary:CreateWindow(config: {
         msgL.Size = UDim2.new(1, -28, 0, 52)
         msgL.Position = UDim2.new(0, 14, 0, 36)
         msgL.BackgroundTransparency = 1
-        msgL.Font = Enum.Font.Gotham
+        msgL.Font = theme.Font or Enum.Font.BuilderSans
         msgL.Text = dContent
         msgL.TextColor3 = theme.TextMuted
-        msgL.TextSize = 12
+        msgL.TextSize = 13
         msgL.TextWrapped = true
         msgL.TextXAlignment = Enum.TextXAlignment.Left
         msgL.ZIndex = 52
@@ -2782,10 +2859,10 @@ function SonLibrary:CreateWindow(config: {
             local actBtn = Instance.new("TextButton")
             actBtn.Size = UDim2.fromOffset(80, 30)
             actBtn.BackgroundColor3 = (b.Style == "Danger" and theme.Danger) or (b.Style == "Primary" and theme.Accent) or theme.CardHover
-            actBtn.Font = Enum.Font.GothamBold
+            actBtn.Font = theme.FontBold or Enum.Font.BuilderSansBold
             actBtn.Text = b.Title
             actBtn.TextColor3 = theme.Text
-            actBtn.TextSize = 12
+            actBtn.TextSize = 13
             actBtn.AutoButtonColor = false
             actBtn.ZIndex = 53
             actBtn.Parent = BtnRow
@@ -2794,7 +2871,7 @@ function SonLibrary:CreateWindow(config: {
             bCorn.CornerRadius = UDim.new(0, 6)
             bCorn.Parent = actBtn
 
-            actBtn.MouseButton1Click:Connect(function()
+            actBtn.Activated:Connect(function()
                 closeDialog()
                 if b.Callback then pcall(b.Callback) end
             end)
@@ -2867,11 +2944,339 @@ function SonLibrary:CreateWindow(config: {
         setWindowVisible(true)
     end
 
+    function Window:SetFont(presetOrFontTable: any)
+        local f = (type(presetOrFontTable) == "string" and SonLibrary.FontPresets[presetOrFontTable]) or presetOrFontTable
+        if type(f) == "table" and f.Font then
+            theme.Font = f.Font
+            theme.FontMedium = f.FontMedium or f.Font
+            theme.FontBold = f.FontBold or f.Font
+        end
+    end
+
     Window.Tab = Window.CreateTab
 
     table.insert(SonLibrary.ActiveWindows, Window)
     return Window
 end
+
+-- BLANK / CUSTOM WINDOW CONSTRUCTOR (Custom Glassmorphic Canvas GUI)
+function SonLibrary:CreateBlankWindow(config: {
+    Title: string?,
+    SubTitle: string?,
+    Size: UDim2?,
+    Position: UDim2?,
+    Scrollable: boolean?,
+    Draggable: boolean?,
+    Topbar: boolean?,
+    CloseButton: boolean?,
+    MinimizeButton: boolean?,
+    AccentColor: Color3?,
+    FontFamily: string?,
+    FontPreset: string?,
+    ToggleKey: Enum.KeyCode?,
+})
+    config = config or {}
+    local titleText = config.Title or "Blank Window"
+    local subTitleText = config.SubTitle or "SonLibrary Canvas"
+    local accent = config.AccentColor or SonLibrary.DefaultTheme.Accent
+    local isScrollable = config.Scrollable == true
+    local hasTopbar = config.Topbar ~= false
+    local hasClose = config.CloseButton ~= false
+    local hasMin = config.MinimizeButton ~= false
+    local toggleKey = config.ToggleKey or Enum.KeyCode.RightControl
+
+    local theme = {}
+    for k, v in pairs(SonLibrary.DefaultTheme) do
+        theme[k] = v
+    end
+    theme.Accent = accent
+    theme.AccentGlow = accent
+
+    local fontCfg = config.FontFamily or config.FontPreset
+    if fontCfg and SonLibrary.FontPresets[fontCfg] then
+        local p = SonLibrary.FontPresets[fontCfg]
+        theme.Font = p.Font
+        theme.FontMedium = p.FontMedium
+        theme.FontBold = p.FontBold
+    elseif config.Font then
+        theme.Font = config.Font
+        theme.FontMedium = config.FontMedium or config.Font
+        theme.FontBold = config.FontBold or config.Font
+    end
+
+    local camera = workspace.CurrentCamera
+    local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+    local defW = math.clamp(math.floor(viewport.X * 0.42), 320, 560)
+    local defH = math.clamp(math.floor(viewport.Y * 0.45), 240, 420)
+    local winSize = config.Size or UDim2.fromOffset(defW, defH)
+    local winPos = config.Position or UDim2.new(0.5, -defW / 2, 0.5, -defH / 2)
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "SonLibrary_Blank_" .. titleText
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.DisplayOrder = 100000
+    ScreenGui.Parent = getSafeGuiParent()
+
+    local WindowFrame = Instance.new("Frame")
+    WindowFrame.Name = "MainFrame"
+    WindowFrame.Size = winSize
+    WindowFrame.Position = winPos
+    WindowFrame.BackgroundColor3 = theme.Background
+    WindowFrame.BackgroundTransparency = theme.BackgroundTransparency
+    WindowFrame.BorderSizePixel = 0
+    WindowFrame.ClipsDescendants = true
+    WindowFrame.Parent = ScreenGui
+
+    local windowCorner = Instance.new("UICorner")
+    windowCorner.CornerRadius = UDim.new(0, 11)
+    windowCorner.Parent = WindowFrame
+
+    local windowStroke = Instance.new("UIStroke")
+    windowStroke.Color = theme.Border
+    windowStroke.Thickness = 1
+    windowStroke.Transparency = 0.35
+    windowStroke.Parent = WindowFrame
+
+    local WindowScale = Instance.new("UIScale")
+    WindowScale.Scale = 1
+    WindowScale.Parent = WindowFrame
+
+    local headerHeight = hasTopbar and 42 or 0
+    local Topbar = nil
+    local BrandTitle = nil
+    local BrandSub = nil
+
+    if hasTopbar then
+        Topbar = Instance.new("Frame")
+        Topbar.Name = "Topbar"
+        Topbar.Size = UDim2.new(1, 0, 0, headerHeight)
+        Topbar.BackgroundTransparency = 1
+        Topbar.Parent = WindowFrame
+
+        local topbarDivider = Instance.new("Frame")
+        topbarDivider.Name = "Divider"
+        topbarDivider.Size = UDim2.new(1, 0, 0, 1)
+        topbarDivider.Position = UDim2.new(0, 0, 1, -1)
+        topbarDivider.BackgroundColor3 = theme.Border
+        topbarDivider.BackgroundTransparency = 0.6
+        topbarDivider.BorderSizePixel = 0
+        topbarDivider.Parent = Topbar
+
+        BrandTitle = Instance.new("TextLabel")
+        BrandTitle.Name = "Title"
+        BrandTitle.Size = UDim2.new(1, -90, 0, 18)
+        BrandTitle.Position = UDim2.new(0, 14, 0, 5)
+        BrandTitle.BackgroundTransparency = 1
+        BrandTitle.Font = theme.FontBold or Enum.Font.BuilderSansBold
+        BrandTitle.Text = titleText
+        BrandTitle.TextColor3 = theme.Text
+        BrandTitle.TextSize = 14
+        BrandTitle.RichText = true
+        BrandTitle.TextXAlignment = Enum.TextXAlignment.Left
+        BrandTitle.Parent = Topbar
+
+        BrandSub = Instance.new("TextLabel")
+        BrandSub.Name = "SubTitle"
+        BrandSub.Size = UDim2.new(1, -90, 0, 14)
+        BrandSub.Position = UDim2.new(0, 14, 0, 23)
+        BrandSub.BackgroundTransparency = 1
+        BrandSub.Font = theme.Font or Enum.Font.BuilderSans
+        BrandSub.Text = subTitleText
+        BrandSub.TextColor3 = theme.Accent
+        BrandSub.TextSize = 11
+        BrandSub.RichText = true
+        BrandSub.TextXAlignment = Enum.TextXAlignment.Left
+        BrandSub.Parent = Topbar
+
+        local Controls = Instance.new("Frame")
+        Controls.Name = "Controls"
+        Controls.Size = UDim2.new(0, 70, 1, 0)
+        Controls.Position = UDim2.new(1, -78, 0, 0)
+        Controls.BackgroundTransparency = 1
+        Controls.Parent = Topbar
+
+        local controlsLayout = Instance.new("UIListLayout")
+        controlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        controlsLayout.FillDirection = Enum.FillDirection.Horizontal
+        controlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+        controlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+        controlsLayout.Padding = UDim.new(0, 6)
+        controlsLayout.Parent = Controls
+
+        local isMinimized = false
+        if hasMin then
+            local MinBtn = Instance.new("TextButton")
+            MinBtn.Name = "MinBtn"
+            MinBtn.Size = UDim2.fromOffset(26, 26)
+            MinBtn.BackgroundColor3 = theme.Card
+            MinBtn.BackgroundTransparency = 0.6
+            MinBtn.AutoButtonColor = false
+            MinBtn.Font = theme.FontBold or Enum.Font.BuilderSansBold
+            MinBtn.Text = "—"
+            MinBtn.TextColor3 = theme.TextMuted
+            MinBtn.TextSize = 11
+            MinBtn.LayoutOrder = 1
+            MinBtn.Parent = Controls
+
+            local minCorner = Instance.new("UICorner")
+            minCorner.CornerRadius = UDim.new(0, 6)
+            minCorner.Parent = MinBtn
+
+            MinBtn.Activated:Connect(function()
+                isMinimized = not isMinimized
+                if isMinimized then
+                    tween(WindowFrame, 0.25, {Size = UDim2.new(winSize.X.Scale, winSize.X.Offset, 0, headerHeight)})
+                else
+                    tween(WindowFrame, 0.25, {Size = winSize})
+                end
+            end)
+        end
+
+        if hasClose then
+            local CloseBtn = Instance.new("TextButton")
+            CloseBtn.Name = "CloseBtn"
+            CloseBtn.Size = UDim2.fromOffset(26, 26)
+            CloseBtn.BackgroundColor3 = theme.Card
+            CloseBtn.BackgroundTransparency = 0.6
+            CloseBtn.AutoButtonColor = false
+            CloseBtn.Font = theme.FontBold or Enum.Font.BuilderSansBold
+            CloseBtn.Text = "✕"
+            CloseBtn.TextColor3 = theme.Danger
+            CloseBtn.TextSize = 11
+            CloseBtn.LayoutOrder = 2
+            CloseBtn.Parent = Controls
+
+            local closeCorner = Instance.new("UICorner")
+            closeCorner.CornerRadius = UDim.new(0, 6)
+            closeCorner.Parent = CloseBtn
+
+            CloseBtn.Activated:Connect(function()
+                ScreenGui:Destroy()
+            end)
+        end
+    end
+
+    -- CONTENT CONTAINER
+    local Container
+    if isScrollable then
+        local scroll = Instance.new("ScrollingFrame")
+        scroll.Name = "ScrollContainer"
+        scroll.Size = UDim2.new(1, -16, 1, -(headerHeight + 16))
+        scroll.Position = UDim2.new(0, 8, 0, headerHeight + 8)
+        scroll.BackgroundTransparency = 1
+        scroll.ScrollBarThickness = 3
+        scroll.ScrollBarImageColor3 = theme.Border
+        scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        scroll.AutomaticCanvasSize = Enum.AutomaticSize.None
+        scroll.ClipsDescendants = true
+        scroll.Parent = WindowFrame
+
+        local layout = Instance.new("UIListLayout")
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Padding = UDim.new(0, 8)
+        layout.Parent = scroll
+
+        local function updateCanvas()
+            if scroll and scroll.Parent and layout then
+                scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 20)
+            end
+        end
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+        Container = scroll
+    else
+        local frame = Instance.new("Frame")
+        frame.Name = "Container"
+        frame.Size = UDim2.new(1, -16, 1, -(headerHeight + 16))
+        frame.Position = UDim2.new(0, 8, 0, headerHeight + 8)
+        frame.BackgroundTransparency = 1
+        frame.ClipsDescendants = true
+        frame.Parent = WindowFrame
+        Container = frame
+    end
+
+    -- Zero-Lag Dragging
+    if config.Draggable ~= false and Topbar then
+        local isDragging = false
+        local dragStart = Vector2.zero
+        local startPos = Vector2.zero
+        local dragMoveConn = nil
+
+        Topbar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                isDragging = true
+                dragStart = Vector2.new(input.Position.X, input.Position.Y)
+                startPos = Vector2.new(WindowFrame.AbsolutePosition.X, WindowFrame.AbsolutePosition.Y)
+
+                if dragMoveConn then dragMoveConn:Disconnect() end
+                dragMoveConn = UserInputService.InputChanged:Connect(function(moveInput)
+                    if not isDragging then return end
+                    if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+                        local delta = Vector2.new(moveInput.Position.X, moveInput.Position.Y) - dragStart
+                        local curCamera = workspace.CurrentCamera
+                        local curVp = curCamera and curCamera.ViewportSize or Vector2.new(1920, 1080)
+                        local winW = WindowFrame.AbsoluteSize.X
+                        local nx = math.clamp(startPos.X + delta.X, -winW + 80, curVp.X - 80)
+                        local ny = math.clamp(startPos.Y + delta.Y, 0, curVp.Y - 40)
+                        WindowFrame.Position = UDim2.fromOffset(nx, ny)
+                    end
+                end)
+
+                local endConn
+                endConn = UserInputService.InputEnded:Connect(function(endInput)
+                    if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+                        isDragging = false
+                        if dragMoveConn then dragMoveConn:Disconnect() dragMoveConn = nil end
+                        if endConn then endConn:Disconnect() endConn = nil end
+                    end
+                end)
+            end
+        end)
+    end
+
+    local isVisible = true
+    local function setVis(state: boolean)
+        isVisible = state
+        if isVisible then
+            WindowFrame.Visible = true
+            tween(WindowScale, 0.2, {Scale = 1}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+            tween(WindowFrame, 0.2, {BackgroundTransparency = theme.BackgroundTransparency})
+        else
+            local a = tween(WindowScale, 0.15, {Scale = 0.94}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+            tween(WindowFrame, 0.15, {BackgroundTransparency = 1})
+            a.Completed:Connect(function()
+                if not isVisible then WindowFrame.Visible = false end
+            end)
+        end
+    end
+
+    if toggleKey then
+        UserInputService.InputBegan:Connect(function(input, gpe)
+            if not gpe and input.KeyCode == toggleKey then
+                setVis(not isVisible)
+            end
+        end)
+    end
+
+    local BlankObj = {
+        ScreenGui = ScreenGui,
+        Frame = WindowFrame,
+        Container = Container,
+        Theme = theme,
+        GetContainer = function() return Container end,
+        GetFrame = function() return WindowFrame end,
+        SetTitle = function(_, t) if BrandTitle then BrandTitle.Text = tostring(t) end end,
+        SetSubTitle = function(_, s) if BrandSub then BrandSub.Text = tostring(s) end end,
+        Toggle = function(_, v) if v ~= nil then setVis(v) else setVis(not isVisible) end end,
+        Open = function() setVis(true) end,
+        Close = function() setVis(false) end,
+        Destroy = function() ScreenGui:Destroy() end,
+    }
+
+    table.insert(SonLibrary.ActiveWindows, BlankObj)
+    return BlankObj
+end
+
+SonLibrary.CreateCustomWindow = SonLibrary.CreateBlankWindow
 
 if getgenv then
     getgenv().SonLibrary = SonLibrary
