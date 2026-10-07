@@ -125,10 +125,10 @@ local SonLibrary = {
         },
         Coiny = {
             Name = "Coiny",
-            Font = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
-            FontMedium = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
-            FontSemiBold = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
-            FontBold = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
+            Font = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("Coiny", Enum.FontWeight.Bold) or safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
+            FontMedium = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("Coiny", Enum.FontWeight.Bold) or safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
+            FontSemiBold = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("Coiny", Enum.FontWeight.Bold) or safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
+            FontBold = makeFontItem("Coiny", Enum.Font.FredokaOne, safeFontFromName("Coiny", Enum.FontWeight.Bold) or safeFontFromName("FredokaOne", Enum.FontWeight.Bold)),
         },
         PaytoneOne = {
             Name = "PaytoneOne",
@@ -1058,7 +1058,7 @@ function SonLibrary:CreateWindow(config: {
         if isMinimized then
             if isMaximized then
                 isMaximized = false
-                if MaxIcon then MaxIcon.Image = "rbxassetid://10734886758" end
+                if MaxIcon then MaxIcon.Image = "rbxassetid://10734886735" end
                 WindowScale.Scale = 1.0
             end
             originalHeight = WindowFrame.AbsoluteSize.Y
@@ -1145,7 +1145,7 @@ function SonLibrary:CreateWindow(config: {
             }, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
         else
             if MaxIcon then
-                MaxIcon.Image = "rbxassetid://10734886758"
+                MaxIcon.Image = "rbxassetid://10734886735"
             end
 
             local restoreW = (savedNormalSize and savedNormalSize.X.Offset > 0) and savedNormalSize.X.Offset or targetWidth
@@ -1165,7 +1165,7 @@ function SonLibrary:CreateWindow(config: {
     end
 
     createControlButton("MinBtn", "rbxassetid://10734896206", 1, false, toggleMinimize)
-    local maxBtnObj = createControlButton("MaxBtn", "rbxassetid://10734886758", 2, false, toggleMaximize)
+    local maxBtnObj = createControlButton("MaxBtn", "rbxassetid://10734886735", 2, false, toggleMaximize)
     MaxIcon = maxBtnObj:FindFirstChild("Icon")
 
     local isVisible = true
@@ -1194,7 +1194,7 @@ function SonLibrary:CreateWindow(config: {
         setWindowVisible(false)
         SonLibrary:Notify({
             Title = titleText,
-            Content = "Menu Ä‘Ă£ áº©n. Nháº¥n phĂ­m táº¯t Ä‘á»ƒ má»Ÿ láº¡i.",
+            Content = "Menu đã ẩn. Nhấn phím tắt để mở lại.",
             Duration = 2.5,
             Type = "Info"
         })
@@ -2142,7 +2142,7 @@ function SonLibrary:CreateWindow(config: {
             arrowIcon.Position = UDim2.new(1, -20, 0.5, -8)
             arrowIcon.BackgroundTransparency = 1
             applyFont(arrowIcon, theme.FontBold, Enum.Font.BuilderSansBold)
-            arrowIcon.Text = "â–¾"
+            arrowIcon.Text = "▼"
             arrowIcon.TextColor3 = theme.Accent
             arrowIcon.TextSize = 13
             arrowIcon.Parent = SelectBox
@@ -2258,7 +2258,7 @@ function SonLibrary:CreateWindow(config: {
                             btn.BackgroundColor3 = theme.CardActive
                             btn.BackgroundTransparency = 0.15
                             btn.TextColor3 = theme.Accent
-                            btn.Text = "   âœ“  " .. optVal
+                            btn.Text = "   ✓  " .. optVal
                         else
                             btn.BackgroundColor3 = Color3.fromRGB(28, 33, 48)
                             btn.BackgroundTransparency = 0.55
@@ -2479,7 +2479,7 @@ function SonLibrary:CreateWindow(config: {
             arrowIcon.Position = UDim2.new(1, -20, 0.5, -8)
             arrowIcon.BackgroundTransparency = 1
             applyFont(arrowIcon, theme.FontBold, Enum.Font.BuilderSansBold)
-            arrowIcon.Text = "â–¾"
+            arrowIcon.Text = "▼"
             arrowIcon.TextColor3 = theme.Accent
             arrowIcon.TextSize = 13
             arrowIcon.Parent = SelectBox
@@ -2585,7 +2585,7 @@ function SonLibrary:CreateWindow(config: {
                             btn.BackgroundColor3 = theme.CardActive
                             btn.BackgroundTransparency = 0.15
                             btn.TextColor3 = theme.Accent
-                            btn.Text = "   âœ“  " .. optVal
+                            btn.Text = "   ✓  " .. optVal
                         else
                             btn.BackgroundColor3 = Color3.fromRGB(28, 33, 48)
                             btn.BackgroundTransparency = 0.55
@@ -3382,7 +3382,7 @@ function SonLibrary:CreateWindow(config: {
     function Window:CreateSettingsTab(settingsConfig: {Title: string?, Icon: string?}?): any
         settingsConfig = settingsConfig or {}
         local SettingsTab = Window:CreateTab({
-            Title = settingsConfig.Title or "CĂ i Ä‘áº·t",
+            Title = settingsConfig.Title or "Cài đặt",
             Icon = settingsConfig.Icon or "rbxassetid://10734950309",
         })
         return SettingsTab
@@ -3617,7 +3617,7 @@ function SonLibrary:CreateBlankWindow(config: {
             MinBtn.BackgroundTransparency = 0.6
             MinBtn.AutoButtonColor = false
             applyFont(MinBtn, theme.FontBold, Enum.Font.BuilderSansBold)
-            MinBtn.Text = "â€”"
+            MinBtn.Text = "—"
             MinBtn.TextColor3 = theme.TextMuted
             MinBtn.TextSize = 12
             MinBtn.LayoutOrder = 1
@@ -3645,7 +3645,7 @@ function SonLibrary:CreateBlankWindow(config: {
             CloseBtn.BackgroundTransparency = 0.6
             CloseBtn.AutoButtonColor = false
             applyFont(CloseBtn, theme.FontBold, Enum.Font.BuilderSansBold)
-            CloseBtn.Text = "âœ•"
+            CloseBtn.Text = "✕"
             CloseBtn.TextColor3 = theme.Danger
             CloseBtn.TextSize = 12
             CloseBtn.LayoutOrder = 2
