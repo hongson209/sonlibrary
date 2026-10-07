@@ -1,19 +1,5 @@
 --!nocheck
---[[
-    ====================================================================
-    SonLibrary UI v2.5.0 - Production Example & Template Script
-    Repository: https://github.com/hongson209/sonlibrary
-    Raw Library: https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua
-    ====================================================================
-    Dùng template này để tích hợp SonLibrary vào bất kỳ Script / Hub nào:
-      - Tương thích 100% PC, Điện thoại (Mobile), Máy tính bảng (Tablet)
-      - Hỗ trợ đầy đủ components: Button, Toggle, Slider, Dropdown (Searchable),
-        MultiDropdown (Searchable), Input, Keybind, ColorPicker, Progress Bar,
-        Modal Dialog, Toast Notifications, Native Roblox Topbar Icon
-      - Smooth Thu gọn (Minimize) co lại 1 nửa chiều ngang mượt mà 144 FPS
-]]
 
--- [1] TẢI THƯ VIỆN (Loadstring từ GitHub hoặc file cục bộ)
 local SonLibrary = (function()
     if _G.SonLibrary and _G.SonLibrary.CreateWindow then
         return _G.SonLibrary
@@ -22,8 +8,11 @@ local SonLibrary = (function()
         return getgenv().SonLibrary
     end
 
-    -- Thử load từ file nội bộ nếu có
-    local localFiles = {"sonlibrary.lua", "Library/sonlibrary.lua", "sonlibrary.luau", "Library/sonlibrary.luau"}
+    local localFiles = {
+        "Library/sonlibrary.lua",
+        "sonlibrary.lua",
+        "SonHUB/Library/sonlibrary.lua",
+    }
     for _, path in ipairs(localFiles) do
         if typeof(isfile) == "function" and isfile(path) and typeof(readfile) == "function" then
             local ok, lib = pcall(function() return loadstring(readfile(path))() end)
@@ -33,233 +22,234 @@ local SonLibrary = (function()
         end
     end
 
-    -- Tải trực tiếp từ Raw GitHub URL
     local githubUrl = "https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua"
-    local rawCode = game:HttpGet(githubUrl)
-    return loadstring(rawCode)()
+    local ok, res = pcall(function() return game:HttpGet(githubUrl) end)
+    if ok and res and #res > 1000 then
+        local lOk, lib = pcall(function() return loadstring(res)() end)
+        if lOk and lib then return lib end
+    end
+
+    error("Failed to load SonLibrary")
 end)()
 
--- [2] KHỞI TẠO CỬA SỔ CHÍNH (CreateWindow)
 local Window = SonLibrary:CreateWindow({
-    Title = "SonHUB",
+    Title = "SonHUB V2",
     SubTitle = "Titan Edition",
-    AccentColor = Color3.fromRGB(0, 166, 255),       -- Màu chủ đề chính (RGB)
-    ToggleKey = Enum.KeyCode.RightControl,            -- Phím tắt bật/tắt menu trên PC
-    TopbarButton = true,                              -- Hiển thị nút tròn logo SonHUB trên Topbar Roblox
+    Logo = "rbxassetid://10723346959",
+    AccentColor = Color3.fromRGB(0, 166, 255),
+    FontPreset = "Inter",
+    ToggleKey = Enum.KeyCode.RightControl,
+    DefaultTab = "Tổng quan",
     Profile = {
-        Enabled = true,                               -- Bật/tắt thẻ người dùng ở góc dưới Sidebar (false nếu muốn ẩn)
-        -- Title = "SonHUB Admin",                    -- Tùy chỉnh tên (mặc định lấy Tên hiển thị Roblox)
-        -- Subtitle = "VIP Lifetime",                 -- Tùy chỉnh dòng phụ (mặc định hiển thị bộ đếm giờ dùng)
-        -- Avatar = "rbxthumb://...",                -- Tùy chỉnh ảnh đại diện (mặc định avatar Roblox của bạn)
+        Enabled = true,
+        Title = "SonHUB VIP",
+        Subtitle = "Lifetime Member",
     }
 })
 
--- [3] TẠO CÁC TAB NỘI DUNG (CreateTab)
+SonLibrary:Notify({
+    Title = "SonHUB",
+    Content = "Khởi chạy thành công SonLibrary v2.5.0",
+    Icon = "rbxassetid://10723346959",
+    Duration = 3,
+    Type = "Success"
+})
+
 local MainTab = Window:CreateTab({
     Title = "Tổng quan",
-    Icon = "rbxassetid://10723407389" -- Icon Lucide Home
+    Icon = "rbxassetid://10723407389"
 })
 
-local ConfigTab = Window:CreateTab({
-    Title = "Cấu hình",
-    Icon = "rbxassetid://10747373176" -- Icon Lucide Sliders
+MainTab:CreateSection("THÔNG TIN")
+
+MainTab:CreateParagraph({
+    Title = "SonHUB Interface",
+    Content = "Giao diện Glassmorphism chuẩn quốc tế, font WindUI Inter sắc nét hỗ trợ tiếng Việt đầy đủ dấu và tối ưu 144 FPS."
 })
 
--- ====================================================================
--- TAB 1: TỔNG QUAN (Main Tab)
--- ====================================================================
-MainTab:CreateSection("Tính năng tự động")
+MainTab:CreateSection("ĐIỀU KHIỂN")
 
--- TOGGLE
-local autoFarmToggle = MainTab:CreateToggle({
-    Name = "Tự động kích hoạt",
-    Description = "Bật tính năng tự động chạy theo chu kỳ lặp lại",
-    Default = true,
-    Callback = function(state: boolean)
-        print("[SonHUB] Tự động kích hoạt:", state)
+MainTab:CreateButton({
+    Name = "Thực thi tác vụ",
+    Description = "Chạy chức năng trực tiếp",
+    Callback = function()
+        SonLibrary:Notify({
+            Title = "Thành công",
+            Content = "Đã thực thi tác vụ",
+            Type = "Success",
+            Duration = 2
+        })
     end
 })
 
--- SLIDER
-local walkSpeedSlider = MainTab:CreateSlider({
+local autoFarmToggle = MainTab:CreateToggle({
+    Name = "Tự động thu thập (Auto Farm)",
+    Description = "Chạy vòng lặp an toàn ở chế độ nền",
+    Default = false,
+    Callback = function(enabled)
+        SonLibrary:Notify({
+            Title = "Auto Farm",
+            Content = enabled and "Đã bật tự động thu thập" or "Đã tắt tự động thu thập",
+            Type = enabled and "Success" or "Warning",
+            Duration = 2
+        })
+    end
+})
+
+MainTab:CreateSlider({
     Name = "Tốc độ di chuyển",
-    Description = "Tùy chỉnh tốc độ di chuyển nhân vật",
+    Description = "WalkSpeed nhân vật",
     Min = 16,
     Max = 250,
-    Default = 32,
-    Precision = 0,
-    Suffix = " studs",
-    Callback = function(val: number)
-        local character = game:GetService("Players").LocalPlayer.Character
-        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = val
+    Default = 50,
+    Suffix = " studs/s",
+    Callback = function(val)
+        local hum = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = val
         end
     end
 })
 
-MainTab:CreateSection("Chọn chế độ & đối tượng")
-
--- DROPDOWN (Có ô tìm kiếm nhỏ tùy chọn Searchable = true)
-local targetModeDrop = MainTab:CreateDropdown({
-    Name = "Chế độ nhắm",
-    Description = "Lựa chọn chế độ khóa mục tiêu",
-    Options = {"Mục tiêu gần nhất", "Máu thấp nhất", "Vị trí con trỏ", "Ngẫu nhiên"},
-    Default = "Mục tiêu gần nhất",
-    Searchable = true, -- Ô tìm kiếm nhỏ gọn lọc thời gian thực
-    Callback = function(chosen: string)
-        print("[SonHUB] Chế độ nhắm hiện tại:", chosen)
-    end
+local progressBar = MainTab:CreateProgress({
+    Name = "Tiến độ nhiệm vụ",
+    Description = "Theo dõi phần trăm hoàn thành",
+    Default = 45
 })
 
--- MULTI-DROPDOWN (Chọn nhiều mục, có Searchable = true)
-local priorityTargets = MainTab:CreateMultiDropdown({
-    Name = "Mục tiêu ưu tiên",
-    Description = "Chọn một hoặc nhiều loại mục tiêu cần lọc",
-    Options = {"Người chơi", "Quái vật", "Boss", "Vật phẩm rơi", "NPC"},
-    Default = {"Người chơi", "Boss"},
-    Searchable = true,
-    Callback = function(list: {string})
-        print("[SonHUB] Danh sách ưu tiên:", table.concat(list, ", "))
-    end
-})
-
--- PROGRESS BAR
-local dataProgress = MainTab:CreateProgress({
-    Name = "Tiến độ tải dữ liệu",
-    Description = "Trạng thái nạp cấu hình hệ thống",
-    Default = 75
-})
-
-MainTab:CreateSection("Tương tác & Thông báo")
-
--- BUTTON: Mở Modal Confirmation Dialog (Hộp thoại xác nhận)
 MainTab:CreateButton({
-    Name = "Mở hộp thoại xác nhận",
-    Description = "Kiểm tra popup xác nhận trước khi thực thi",
+    Name = "Tăng tiến độ +15%",
+    Callback = function()
+        local current = progressBar.Value or 45
+        local newPct = math.min(current + 15, 100)
+        progressBar:Set(newPct, "Đang xử lý dữ liệu...")
+    end
+})
+
+local FontTab = Window:CreateTab({
+    Title = "Cài đặt Font",
+    Icon = "rbxassetid://10734950309"
+})
+
+FontTab:CreateSection("BỘ CHUYỂN FONT")
+
+local fontList = {
+    "Inter",
+    "PressStart2P",
+    "PaytoneOne",
+    "Cutepunch",
+    "Chubby",
+    "Playful",
+    "Rounded",
+    "Gotham",
+    "Tech",
+    "Code",
+    "Elegant"
+}
+
+FontTab:CreateDropdown({
+    Name = "Preset Font Chữ",
+    Description = "Đổi font của toàn bộ Window theo thời gian thực",
+    Options = fontList,
+    Default = "Inter",
+    Searchable = true,
+    Callback = function(selectedFont)
+        Window:SetFont(selectedFont)
+        SonLibrary:Notify({
+            Title = "Đã cập nhật Font",
+            Content = "Đang sử dụng: " .. selectedFont,
+            Duration = 2,
+            Type = "Info"
+        })
+    end
+})
+
+FontTab:CreateSection("MẪU THỬ TIẾNG VIỆT")
+
+FontTab:CreateParagraph({
+    Title = "Typography Preview",
+    Content = "Hà Nội nghìn năm văn hiến, non sông gấm vóc rạng ngời.\n0123456789 - [SonHUB] - (v2.5.0) - !@#$%^&*()_+"
+})
+
+local ConfigTab = Window:CreateTab({
+    Title = "Cấu hình",
+    Icon = "rbxassetid://10747373176"
+})
+
+ConfigTab:CreateSection("TÙY CHỌN")
+
+ConfigTab:CreateInput({
+    Name = "Mã kích hoạt VIP",
+    Description = "Nhập mã quà tặng hoặc lệnh tùy chỉnh",
+    Placeholder = "Nhập code tại đây...",
+    Default = "",
+    Callback = function(text, enterPressed)
+        if enterPressed and #text > 0 then
+            SonLibrary:Notify({
+                Title = "Nhập mã thành công",
+                Content = "Mã: " .. text,
+                Duration = 2,
+                Type = "Success"
+            })
+        end
+    end
+})
+
+ConfigTab:CreateMultiDropdown({
+    Name = "Khu vực hoạt động",
+    Description = "Chọn một hoặc nhiều địa điểm",
+    Options = {"Thành phố chính", "Hang băng", "Rừng nguyên sinh", "Sa mạc lửa", "Đảo trên không"},
+    Default = {"Thành phố chính"},
+    Searchable = true,
+    Callback = function(selectedList)
+        print("[SonHUB] Khu vực:", table.concat(selectedList, ", "))
+    end
+})
+
+ConfigTab:CreateKeybind({
+    Name = "Phím kích hoạt nhanh",
+    Description = "Gán phím tắt nhanh trên bàn phím",
+    Default = Enum.KeyCode.F,
+    Callback = function(key)
+        SonLibrary:Notify({
+            Title = "Đổi phím tắt",
+            Content = "Phím mới: " .. key.Name,
+            Duration = 2,
+            Type = "Info"
+        })
+    end
+})
+
+ConfigTab:CreateColorPicker({
+    Name = "Màu hiển thị ESP",
+    Default = Color3.fromRGB(0, 166, 255),
+    Callback = function(newColor)
+        print("[SonHUB] Color:", math.floor(newColor.R*255), math.floor(newColor.G*255), math.floor(newColor.B*255))
+    end
+})
+
+ConfigTab:CreateButton({
+    Name = "Xác nhận cài lại thiết lập",
+    Description = "Mở hộp thoại Modal Popup",
     Callback = function()
         Window:CreateDialog({
-            Title = "Xác nhận hành động",
-            Content = "Bạn có chắc chắn muốn áp dụng các thiết lập này cho SonHUB?",
+            Title = "Xác nhận tác vụ",
+            Content = "Bạn có chắc chắn muốn cài lại toàn bộ thiết lập về mặc định ban đầu không?",
             Buttons = {
                 {
-                    Title = "Hủy bỏ",
-                    Style = "CardHover"
-                },
-                {
-                    Title = "Xác nhận",
+                    Title = "Đồng ý",
                     Style = "Primary",
                     Callback = function()
-                        SonLibrary:Notify({
-                            Title = "SonHUB",
-                            Content = "Thao tác đã được xác nhận thành công!",
-                            Duration = 3,
-                            Type = "Success"
-                        })
+                        SonLibrary:Notify({ Title = "Đã đặt lại", Content = "Cài đặt đã trở về mặc định", Type = "Success", Duration = 2 })
                     end
+                },
+                {
+                    Title = "Hủy bỏ",
+                    Style = "Danger"
                 }
             }
         })
     end
 })
 
--- BUTTON: Thử nghiệm Toast Notification
-MainTab:CreateButton({
-    Name = "Thử nghiệm thông báo Toast",
-    Description = "Bấm để kiểm tra thông báo Toast glassmorphic",
-    Callback = function()
-        SonLibrary:Notify({
-            Title = "SonHUB",
-            Content = "Thao tác thông báo đã được kích hoạt!",
-            Duration = 3.5,
-            Type = "Success" -- Hỗ trợ: "Info", "Success", "Warning", "Danger"
-        })
-    end
-})
-
--- ====================================================================
--- TAB 2: CẤU HÌNH (Config Tab)
--- ====================================================================
-ConfigTab:CreateSection("Cấu hình nâng cao")
-
--- INPUT (Text box)
-ConfigTab:CreateInput({
-    Name = "Tên mục tiêu cụ thể",
-    Description = "Nhập tên người chơi muốn ưu tiên",
-    Placeholder = "Nhập tên người chơi...",
-    Default = "",
-    Callback = function(text: string, enterPressed: boolean)
-        print("[SonHUB] Tên mục tiêu nhập vào:", text, "(Enter:", enterPressed, ")")
-    end
-})
-
--- KEYBIND
-ConfigTab:CreateKeybind({
-    Name = "Phím tắt nhanh",
-    Description = "Nhấn để gán phím kích hoạt chức năng",
-    Default = Enum.KeyCode.E,
-    Callback = function(key: Enum.KeyCode)
-        print("[SonHUB] Phím tắt đã đổi sang:", key.Name)
-    end
-})
-
--- COLOR PICKER
-ConfigTab:CreateColorPicker({
-    Name = "Màu chủ đề ESP",
-    Default = Color3.fromRGB(0, 166, 255),
-    Callback = function(color: Color3)
-        print("[SonHUB] Màu đã chọn (R, G, B):", math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255))
-    end
-})
-
--- PARAGRAPH
-ConfigTab:CreateParagraph({
-    Title = "Thông tin hệ thống",
-    Content = "SonLibrary v2.5.0 - Tối ưu hoàn hảo cho Điện thoại, Máy tính bảng và PC. Hỗ trợ tự động co giãn theo tỉ lệ màn hình và thu nhỏ 1/2 chiều ngang mượt mà."
-})
-
--- ====================================================================
--- TAB 3: CÀI ĐẶT HỆ THỐNG (Settings Tab)
--- ====================================================================
-local SettingsTab = Window:CreateSettingsTab()
-SettingsTab:CreateSection("Cài đặt chung")
-
-SettingsTab:CreateKeybind({
-    Name = "Phím mở / ẩn Menu",
-    Default = Enum.KeyCode.RightControl,
-    Callback = function(k: Enum.KeyCode)
-        print("[SonHUB] Toggle Menu Key:", k.Name)
-    end
-})
-
-SettingsTab:CreateButton({
-    Name = "Sao chép link Discord",
-    Description = "Tham gia server cộng đồng hỗ trợ SonHUB",
-    Callback = function()
-        if typeof(setclipboard) == "function" then
-            setclipboard("https://discord.gg/htBURFNyhV")
-        end
-        SonLibrary:Notify({
-            Title = "SonHUB",
-            Content = "Đã sao chép link Discord vào bộ nhớ tạm!",
-            Duration = 2.8,
-            Type = "Success"
-        })
-    end
-})
-
--- [4] GỬI THÔNG BÁO CHÀO MỪNG KHI LOAD XONG
-SonLibrary:Notify({
-    Title = "SonHUB",
-    Content = "Giao diện đã tải thành công!",
-    Duration = 3.2,
-    Type = "Success"
-})
-
-return {
-    Window = Window,
-    MainTab = MainTab,
-    ConfigTab = ConfigTab,
-    SettingsTab = SettingsTab,
-    SonLibrary = SonLibrary
-}
+return Window
