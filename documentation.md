@@ -2,17 +2,21 @@
 
 <div align="center">
 
-![SonLibrary Banner](https://cdn.discordapp.com/attachments/1317065294736265248/1555222187378475029/sonhub.png)
+<img src="https://cdn.discordapp.com/attachments/1317065294736265248/1555222187378475029/sonhub.png" alt="SonHUB Logo" width="220" />
+
+### **SonHUB Official UI Library**
+*Logo Asset ID: `rbxassetid://10723346959` | Default Font: `WindUI Inter` (`rbxassetid://12187365364`)*
 
 [![Release](https://img.shields.io/badge/Release-v2.5.0-00A6FF.svg?style=for-the-badge&logo=roblox)](https://github.com/hongson209/sonlibrary)
 [![Language](https://img.shields.io/badge/Language-Luau%20%2F%20Lua-blue.svg?style=for-the-badge&logo=lua)](https://github.com/hongson209/sonlibrary)
+[![Default Font](https://img.shields.io/badge/Default%20Font-WindUI%20Inter-795298.svg?style=for-the-badge)](https://github.com/hongson209/sonlibrary)
 [![FPS](https://img.shields.io/badge/Performance-144%20FPS%20GPU-00C853.svg?style=for-the-badge)](https://github.com/hongson209/sonlibrary)
 [![Cross-Platform](https://img.shields.io/badge/Platform-PC%20%7C%20Mobile%20%7C%20Tablet-FFA000.svg?style=for-the-badge)](https://github.com/hongson209/sonlibrary)
 [![License](https://img.shields.io/badge/License-MIT-gray.svg?style=for-the-badge)](https://github.com/hongson209/sonlibrary)
 
-**Thư viện UI Script hiện đại, đẳng cấp, tối ưu hóa phần cứng GPU cực nhẹ, tương thích hoàn hảo 100% Mobile, Máy tính bảng và PC.**
+**Thư viện UI Script hiện đại, đẳng cấp, tối ưu hóa phần cứng GPU cực nhẹ (144 FPS), tương thích hoàn hảo 100% Mobile, Máy tính bảng và PC.**
 
-[Cài đặt nhanh](#-cài-đặt-nhanh-quick-start) • [Khởi tạo cửa sổ](#-khởi-tạo-cửa-sổ-createwindow) • [Quản lý Tab](#-quản-lý-tab-createtab) • [Danh sách Components](#-thành-phần-giao-diện-components) • [Mã nguồn mẫu](#-mã-nguồn-mẫu-hoàn-chỉnh-examplelua)
+[Cài đặt nhanh](#-cài-đặt-nhanh-quick-start) • [Hệ thống Font chữ](#-hệ-thống-font-chữ-typography--presets) • [Khởi tạo cửa sổ](#-khởi-tạo-cửa-sổ-createwindow) • [Quản lý Tab](#-quản-lý-tab-createtab) • [Danh sách Components](#-thành-phần-giao-diện-components) • [Mã nguồn mẫu](#-mã-nguồn-mẫu-hoàn-chỉnh-examplelua)
 
 </div>
 
@@ -21,19 +25,62 @@
 ## 🌟 Điểm nổi bật & Tính năng vượt trội
 
 - 💎 **Thiết kế Glassmorphism chuẩn quốc tế:** Nền tối sâu (Deep Dark), hiệu ứng làm mờ acrylic tinh tế, viền phát sáng động theo màu chủ đề.
+- 🔤 **Chuẩn Font WindUI Inter mặc định:** Tích hợp bộ font asset chính thức của WindUI (`rbxassetid://12187365364`) với đầy đủ biến thể Medium/SemiBold/Bold/Heavy.
+- 👾 **Bổ sung Font đặc biệt:** Hỗ trợ font **Press Start 2P** (8-bit Pixel / Arcade) và **Paytone One Regular** (400), cùng các bộ font bo tròn dày dặn Cutepunch, Chubby, Coiny.
+- ⚡ **Tối ưu hóa 144 FPS mượt mà:** Động cơ Animation sử dụng bộ đệm TweenInfo thông minh (Zero GC Overhead), loại bỏ hoàn toàn hiện tượng drop frame hay giật lag.
 - 📱 **Hỗ trợ đa nền tảng (Cross-Platform Responsive):** Tự động phát hiện và co giãn theo kích thước màn hình điện thoại (Landscape / Portrait) và máy tính, không lo vỡ layout.
-- 🪟 **Smooth Minimize (Thu gọn 1/2 chiều ngang):** Khi bấm nút thu gọn `[-]`, giao diện co lại một nửa chiều ngang mượt mà ở tần số quét cao (144 FPS) mà không che khuất màn hình chơi game.
-- 🎮 **Roblox Native Topbar Icon:** Tích hợp nút icon tròn logo SonHUB trực tiếp vào thanh điều khiển Topbar gốc của Roblox, mở/tắt menu chỉ với 1 chạm trên điện thoại.
-- 👤 **Thẻ Profile tùy biến:** Hiển thị Avatar, Tên người dùng và bộ đếm thời gian chơi game trực tiếp (Playtime Live Tracker). Có thể tùy chỉnh chữ hoặc ẩn hoàn toàn.
+- 🪟 **Smooth Minimize (Thu gọn 1/2 chiều ngang):** Khi bấm nút thu gọn `[-]`, giao diện co lại một nửa chiều ngang mượt mà mà không che khuất màn hình chơi game.
+- 🎮 **Roblox Native Topbar Icon:** Tích hợp nút icon tròn logo SonHUB (`rbxassetid://10723346959`) trực tiếp vào thanh điều khiển Topbar gốc của Roblox, mở/tắt menu chỉ với 1 chạm.
+- 👤 **Thẻ Profile tùy biến:** Hiển thị Avatar, Tên người dùng và bộ đếm thời gian chơi game trực tiếp (Playtime Live Tracker).
 - 🔍 **Tìm kiếm tức thì (Searchable Dropdown):** Hỗ trợ tìm kiếm theo từ khóa trong danh sách chọn (Dropdown & MultiDropdown) với danh sách cuộn mượt mà.
-- 🎨 **Color Picker & Keybind chuyên nghiệp:** Bảng chọn màu HSV + thanh Hue mượt mà, bộ gán phím hỗ trợ cả bàn phím PC và chạm cảm ứng.
+- 🎨 **Color Picker & Keybind chuyên nghiệp:** Bảng chọn màu HSV 3 kênh RGB, bộ gán phím hỗ trợ cả bàn phím PC và chạm cảm ứng.
 - 🔔 **Toast Notification & Modal Dialog:** Thông báo góc phải dạng popup kính mờ không đè lên thanh chat cùng hộp thoại xác nhận (Dialog) an toàn.
+
+---
+
+## 🔤 Hệ thống Font chữ (Typography & Presets)
+
+Thư viện hỗ trợ sẵn hơn 20 font presets được tối ưu hóa độ dày, hiển thị sắc nét và hỗ trợ 100% tiếng Việt có dấu:
+
+### 1. Font Mặc định: WindUI Inter
+* **Asset ID:** `rbxassetid://12187365364`
+* **Đặc tính:** Font hiện đại chuẩn phẳng của WindUI, nét chữ rõ ràng, độ tương phản cao, không bị co hẹp khó chịu.
+* **Cơ chế Fallback:** Tự động fallback mượt mà sang `Enum.Font.BuilderSans` và `Enum.Font.GothamMedium` nếu kết nối tải asset gặp sự cố.
+
+### 2. Danh sách Font Presets có sẵn:
+| Preset | Phong cách / Kiểu mẫu | Font Engine | Thích hợp cho |
+| :--- | :--- | :--- | :--- |
+| **`Inter`** *(Mặc định)* | Chuẩn WindUI bản gốc (Khuyên dùng) | `rbxassetid://12187365364` | Mọi thể loại Hub & Script |
+| **`Modern`** | Hiện đại chuẩn phẳng, thanh lịch | `rbxassetid://12187365364` | Desktop UI |
+| **`PressStart2P`** | Retro 8-bit Arcade Pixel hoài niệm | `PressStart2P` / `Arcade` | Game 8-bit, Retro, Arcade |
+| **`PaytoneOne`** | Paytone One Regular (400) | `PaytoneOne` / `FredokaOne` | Tiêu đề game nổi bật |
+| **`Cutepunch`** | Bo tròn đáng yêu, nét dày chắc | `FredokaOne` | Game Anime, Chill, Cute |
+| **`Chubby`** | Mũm mĩm, nét căng, siêu dễ nhìn | `FredokaOne` | Màn hình điện thoại nhỏ |
+| **`Playful`** | Trẻ trung, mềm mại, chuẩn tiếng Việt | `Ubuntu` | Mobile & Tablet |
+| **`Rounded`** | Mềm mại, góc cạnh bo tròn | `Ubuntu` | Giao diện thân thiện |
+| **`Gotham`** | Nền tảng chuyên nghiệp cổ điển | `GothamSSm` / `Gotham` | Script đa năng |
+| **`Minimal`** | Tối giản, thanh mảnh vừa vặn | `GothamSSm` | Giao diện gọn gàng |
+| **`Tech`** | Góc cạnh, phong cách công nghệ | `TitilliumWeb` | Sci-Fi, Cyberpunk |
+| **`Code`** | Monospace chuẩn lập trình viên | `RobotoMono` | Console, Debug, Log |
+| **`Elegant`** | Cổ điển trang nhã có chân (Serif) | `Merriweather` / `Garamond` | Menu sang trọng |
+
+### 3. Cách sử dụng và Đổi Font:
+```lua
+-- Cách 1: Thiết lập ngay khi khởi tạo Window
+local Window = SonLibrary:CreateWindow({
+    Title = "SonHUB",
+    FontPreset = "PressStart2P", -- "Inter", "PaytoneOne", "Cutepunch", ...
+})
+
+-- Cách 2: Đổi Font trực tiếp trong quá trình chạy (Live Switcher)
+Window:SetFont("PaytoneOne")
+```
 
 ---
 
 ## 🚀 Cài đặt nhanh (Quick Start)
 
-Dán đoạn mã sau vào đầu script của bạn để tải thư viện từ GitHub:
+Dán đoạn mã sau vào đầu script của bạn để tải thư viện:
 
 ```lua
 local SonLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua"))()
@@ -47,15 +94,17 @@ local SonLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/ho
 local Window = SonLibrary:CreateWindow({
     Title = "SonHUB",                                 -- Tên tiêu đề lớn của menu
     SubTitle = "Titan Edition",                       -- Dòng tiêu đề phụ (phiên bản / tác giả)
+    Logo = "rbxassetid://10723346959",                -- Logo SonHUB chính thức
     AccentColor = Color3.fromRGB(0, 166, 255),        -- Màu chủ đề chính (RGB)
-    ToggleKey = Enum.KeyCode.RightControl,             -- Phím tắt ẩn/hiện menu trên PC
-    TopbarButton = true,                               -- Hiển thị icon SonHUB trên thanh Topbar Roblox
+    FontPreset = "Inter",                             -- Mặc định font WindUI Inter
+    ToggleKey = Enum.KeyCode.RightControl,            -- Phím tắt ẩn/hiện menu trên PC
+    TopbarButton = true,                              -- Hiển thị icon SonHUB trên thanh Topbar Roblox
     DefaultTab = "Tổng quan",                         -- Tab mở mặc định khi script khởi động
     Profile = {
-        Enabled = true,                                -- Bật/tắt thẻ thông tin người dùng ở góc dưới Sidebar
-        Title = nil,                                   -- (Tùy chọn) Tên hiển thị (nil = tự lấy tên Roblox)
-        Subtitle = nil,                                -- (Tùy chọn) Chữ phụ (nil = bộ đếm thời gian chơi live)
-        Avatar = nil,                                  -- (Tùy chọn) Ảnh avatar (nil = avatar Roblox của bạn)
+        Enabled = true,                               -- Bật/tắt thẻ thông tin người dùng ở góc dưới Sidebar
+        Title = nil,                                  -- (Tùy chọn) Tên hiển thị (nil = tự lấy tên Roblox)
+        Subtitle = nil,                               -- (Tùy chọn) Chữ phụ (nil = bộ đếm thời gian chơi live)
+        Avatar = nil,                                 -- (Tùy chọn) Ảnh avatar (nil = avatar Roblox của bạn)
     }
 })
 ```
