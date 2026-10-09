@@ -7,9 +7,19 @@ pcall(function()
     if safeP:FindFirstChild("PastaCompleteUI") then
         safeP.PastaCompleteUI:Destroy()
     end
+    if safeP:FindFirstChild("SonHubFloatingGui") then
+        safeP.SonHubFloatingGui:Destroy()
+    end
 end)
 
 local SonLibrary = (function()
+    if _G.SonLibrary and typeof(_G.SonLibrary.CreateWindow) == "function" then
+        return _G.SonLibrary
+    end
+    if typeof(getgenv) == "function" and getgenv().SonLibrary and typeof(getgenv().SonLibrary.CreateWindow) == "function" then
+        return getgenv().SonLibrary
+    end
+
     local localPaths = {
         "Library/sonlibrary.lua",
         "sonlibrary.lua",
@@ -31,13 +41,6 @@ local SonLibrary = (function()
         if ok and res and typeof(res.CreateWindow) == "function" then
             return res
         end
-    end
-
-    if _G.SonLibrary and typeof(_G.SonLibrary.CreateWindow) == "function" then
-        return _G.SonLibrary
-    end
-    if typeof(getgenv) == "function" and getgenv().SonLibrary and typeof(getgenv().SonLibrary.CreateWindow) == "function" then
-        return getgenv().SonLibrary
     end
 
     error("[SonHUB] Failed to initialize SonLibrary!")
