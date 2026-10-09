@@ -363,7 +363,11 @@ end
 function SonLibrary:Unload()
     for _, win in ipairs(self.ActiveWindows) do
         pcall(function()
-            if win.ScreenGui then win.ScreenGui:Destroy() end
+            if win.Destroy then
+                win:Destroy()
+            elseif win.ScreenGui then
+                win.ScreenGui:Destroy()
+            end
         end)
     end
     self.ActiveWindows = {}
@@ -372,6 +376,12 @@ function SonLibrary:Unload()
         self.NotificationGui = nil
         self.NotificationContainer = nil
     end
+    pcall(function()
+        local safeP = getSafeGuiParent()
+        if safeP:FindFirstChild("SonHubFloatingGui") then
+            safeP.SonHubFloatingGui:Destroy()
+        end
+    end)
 end
 
 function SonLibrary:CreateWindow(config: {
@@ -811,7 +821,7 @@ function SonLibrary:CreateWindow(config: {
     WindowHolder.Name = "WindowHolder"
     WindowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
     WindowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
-    WindowHolder.Size = UDim2.new(0, 790, 0, 490)
+    WindowHolder.Size = (WindowDefaultColumns == 1) and UDim2.new(0, 560, 0, 520) or UDim2.new(0, 790, 0, 490)
     WindowHolder.BackgroundTransparency = 1
     WindowHolder.BorderSizePixel = 0
     WindowHolder.Visible = (KeyPassed == true)
@@ -932,16 +942,30 @@ function SonLibrary:CreateWindow(config: {
     -- Floating SonHub Toggle Button in dedicated topmost ScreenGui
     local FloatingGui = nil
     pcall(function()
-        if safeParent:FindFirstChild("SonHubFloatingGui") then
-            safeParent.SonHubFloatingGui:Destroy()
+        local purgeTargets = { safeParent }
+        pcall(function() if typeof(gethui) == "function" then table.insert(purgeTargets, gethui()) end end)
+        pcall(function() table.insert(purgeTargets, CoreGui) end)
+        pcall(function() if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then table.insert(purgeTargets, LocalPlayer.PlayerGui) end end)
+        for _, p in ipairs(purgeTargets) do
+            for _, c in ipairs(p:GetChildren()) do
+                local n = c.Name:lower()
+                if n == "sonhubfloatinggui" or n == "sonhub_floatingtoggle" then
+                    pcall(function() c:Destroy() end)
+                end
+            end
         end
-        FloatingGui = Instance.new("ScreenGui")
-        FloatingGui.Name = "SonHubFloatingGui"
-        FloatingGui.ResetOnSpawn = false
-        FloatingGui.DisplayOrder = 999999
-        FloatingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        FloatingGui.Parent = safeParent
     end)
+
+    if config.FloatingButton ~= false then
+        pcall(function()
+            FloatingGui = Instance.new("ScreenGui")
+            FloatingGui.Name = "SonHubFloatingGui"
+            FloatingGui.ResetOnSpawn = false
+            FloatingGui.DisplayOrder = 999999
+            FloatingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            FloatingGui.Parent = safeParent
+        end)
+    end
     local floatParent = FloatingGui or ScreenGui
 
     local FloatingBtn = Instance.new("Frame")
@@ -1392,6 +1416,10 @@ function SonLibrary:CreateWindow(config: {
 
     function WindowObj:Destroy()
         pcall(function() ScreenGui:Destroy() end)
+        if FloatingGui then
+            pcall(function() FloatingGui:Destroy() end)
+            FloatingGui = nil
+        end
     end
 
     function WindowObj:CreateDialog(dConfig: {
@@ -1724,19 +1752,20 @@ function SonLibrary:CreateWindow(config: {
                 parentCol = (chosen == 2) and Col2 or Col1
             end
 
+            local singleOrder = #TabObj.Cards + 1
             local card = Instance.new("Frame")
             card.Size = UDim2.new(1, 0, 0, 0)
             card.AutomaticSize = Enum.AutomaticSize.Y
             card.BackgroundColor3 = THEME.CardBg
             card.BorderSizePixel = 0
-            card.LayoutOrder = order
+            card.LayoutOrder = (WindowObj.CurrentColumns == 1) and singleOrder or order
             card.Parent = parentCol
 
             table.insert(TabObj.Cards, {
                 Card = card,
                 OriginalCol = chosen,
                 ColOrder = order,
-                SingleOrder = #TabObj.Cards + 1
+                SingleOrder = singleOrder
             })
 
             local cCor = Instance.new("UICorner")
@@ -3496,6 +3525,9 @@ function SonLibrary:CreateWindow(config: {
         return TabObj
     end
 
+    if WindowDefaultColumns == 1 then
+        WindowObj:SetColumns(1)
+    end
     table.insert(SonLibrary.ActiveWindows, WindowObj)
     return WindowObj
 end
