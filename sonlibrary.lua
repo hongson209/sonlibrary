@@ -21,11 +21,23 @@ local makefolderFn = makefolder or (getgenv and getgenv().makefolder)
 local listfilesFn = listfiles or (getgenv and getgenv().listfiles)
 local getcustomassetFn = getcustomasset or (getgenv and getgenv().getcustomasset)
 
-local CUSTOM_LOGO_ID = "rbxassetid://139568612294283"
-local CachedLogoAsset = CUSTOM_LOGO_ID
+local SONHUB_LOGO_URL = "https://cdn.discordapp.com/attachments/1317065294736265248/1555222187378475029/sonhub.png"
+local SONHUB_ROBLOX_ASSET = "rbxassetid://10723346959"
 
 local function getResolvedLogo()
-    return CachedLogoAsset or CUSTOM_LOGO_ID
+    local ok, asset = pcall(function()
+        if typeof(isfile) == "function" and typeof(writefile) == "function" and typeof(getcustomasset) == "function" then
+            if not isfile("sonhub_logo.png") then
+                local data = game:HttpGet(SONHUB_LOGO_URL)
+                if data and #data > 500 then
+                    writefile("sonhub_logo.png", data)
+                end
+            end
+            return getcustomasset("sonhub_logo.png")
+        end
+    end)
+    if ok and asset then return asset end
+    return SONHUB_ROBLOX_ASSET
 end
 
 local THEME = {
@@ -924,33 +936,10 @@ function SonLibrary:CreateWindow(config: {
 
     local MainLogoHolder = Instance.new("Frame")
     MainLogoHolder.Name = "LogoHolder"
-    MainLogoHolder.Size = UDim2.new(0, 56, 0, 56)
-    MainLogoHolder.Position = UDim2.new(0, 24, 0, 0)
+    MainLogoHolder.Size = UDim2.new(0, 34, 0, 34)
+    MainLogoHolder.Position = UDim2.new(0, 20, 0.5, -17)
     MainLogoHolder.BackgroundTransparency = 1
     MainLogoHolder.Parent = TopBar
-
-    local MainLogoHalo = Instance.new("ImageLabel")
-    MainLogoHalo.Name = "Halo"
-    MainLogoHalo.Size = UDim2.new(2.1, 0, 2.1, 0)
-    MainLogoHalo.Position = UDim2.new(-0.55, 0, -0.55, 0)
-    MainLogoHalo.BackgroundTransparency = 1
-    MainLogoHalo.Image = "rbxassetid://5028857084"
-    MainLogoHalo.ImageColor3 = THEME.Accent
-    MainLogoHalo.ImageTransparency = 0.58
-    MainLogoHalo.ZIndex = 1
-    MainLogoHalo.Parent = MainLogoHolder
-
-    local MainLogoShadow = Instance.new("ImageLabel")
-    MainLogoShadow.Name = "LogoShadow"
-    MainLogoShadow.Size = UDim2.new(1, 0, 1, 0)
-    MainLogoShadow.Position = UDim2.new(0, 2, 0, 2)
-    MainLogoShadow.BackgroundTransparency = 1
-    MainLogoShadow.Image = LogoId
-    MainLogoShadow.ScaleType = Enum.ScaleType.Fit
-    MainLogoShadow.ImageColor3 = Color3.fromRGB(50, 10, 14)
-    MainLogoShadow.ImageTransparency = 0.2
-    MainLogoShadow.ZIndex = 2
-    MainLogoShadow.Parent = MainLogoHolder
 
     local MainLogoImg = Instance.new("ImageLabel")
     MainLogoImg.Name = "LogoMain"
@@ -963,18 +952,9 @@ function SonLibrary:CreateWindow(config: {
     MainLogoImg.ZIndex = 3
     MainLogoImg.Parent = MainLogoHolder
 
-    local MainLogoGrad = Instance.new("UIGradient")
-    MainLogoGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.0, THEME.AccentSoft),
-        ColorSequenceKeypoint.new(0.45, THEME.Accent),
-        ColorSequenceKeypoint.new(1.0, Color3.fromRGB(165, 32, 42))
-    })
-    MainLogoGrad.Rotation = -35
-    MainLogoGrad.Parent = MainLogoImg
-
     local SearchBox = Instance.new("Frame")
     SearchBox.Size = UDim2.new(0, 160, 0, 26)
-    SearchBox.Position = UDim2.new(0, 88, 0.5, -13)
+    SearchBox.Position = UDim2.new(0, 68, 0.5, -13)
     SearchBox.BackgroundColor3 = THEME.CardBg
     SearchBox.BorderSizePixel = 0
     SearchBox.Parent = TopBar
@@ -1008,30 +988,9 @@ function SonLibrary:CreateWindow(config: {
     SearchInput.TextXAlignment = Enum.TextXAlignment.Left
     SearchInput.Parent = SearchBox
 
-    local CenterTitle = Instance.new("TextLabel")
-    CenterTitle.Name = "CenterTitle"
-    CenterTitle.Size = UDim2.new(0, 240, 1, 0)
-    CenterTitle.Position = UDim2.new(0.5, 0, 0.5, 0)
-    CenterTitle.AnchorPoint = Vector2.new(0.5, 0.5)
-    CenterTitle.BackgroundTransparency = 1
-    CenterTitle.Text = config.Title or "SonHUB"
-    CenterTitle.Font = Enum.Font.GothamBold
-    CenterTitle.TextSize = 20
-    CenterTitle.TextColor3 = THEME.TextPrimary
-    CenterTitle.TextXAlignment = Enum.TextXAlignment.Center
-    CenterTitle.Parent = TopBar
-
-    local CenterTitleGrad = Instance.new("UIGradient")
-    CenterTitleGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(255, 235, 238)),
-        ColorSequenceKeypoint.new(1.0, THEME.AccentSoft)
-    })
-    CenterTitleGrad.Parent = CenterTitle
-
     local WindowControls = Instance.new("Frame")
     WindowControls.Name = "WindowControls"
-    WindowControls.Size = UDim2.new(0, 104, 0, 24)
+    WindowControls.Size = UDim2.new(0, 108, 0, 24)
     WindowControls.Position = UDim2.new(1, -14, 0.5, 0)
     WindowControls.AnchorPoint = Vector2.new(1, 0.5)
     WindowControls.BackgroundTransparency = 1
@@ -1041,59 +1000,103 @@ function SonLibrary:CreateWindow(config: {
     wcList.FillDirection = Enum.FillDirection.Horizontal
     wcList.HorizontalAlignment = Enum.HorizontalAlignment.Right
     wcList.VerticalAlignment = Enum.VerticalAlignment.Center
-    wcList.Padding = UDim.new(0, 3)
+    wcList.Padding = UDim.new(0, 4)
     wcList.Parent = WindowControls
 
     local ModeBtn = Instance.new("TextButton")
     ModeBtn.Name = "ModeBtn"
     ModeBtn.Size = UDim2.new(0, 24, 0, 24)
     ModeBtn.BackgroundTransparency = 1
-    ModeBtn.Text = "◫"
-    ModeBtn.Font = Enum.Font.GothamBold
-    ModeBtn.TextSize = 13
-    ModeBtn.TextColor3 = THEME.TextDim
+    ModeBtn.Text = ""
     ModeBtn.AutoButtonColor = false
     ModeBtn.Parent = WindowControls
+
+    local modeIconWrap = Instance.new("Frame")
+    modeIconWrap.Size = UDim2.new(0, 13, 0, 12)
+    modeIconWrap.Position = UDim2.new(0.5, -6.5, 0.5, -6)
+    modeIconWrap.BackgroundTransparency = 1
+    modeIconWrap.Parent = ModeBtn
+
+    local modeCol1 = Instance.new("Frame")
+    modeCol1.Name = "Col1"
+    modeCol1.Size = UDim2.new(0, 5, 1, 0)
+    modeCol1.BackgroundColor3 = THEME.TextDim
+    modeCol1.BorderSizePixel = 0
+    modeCol1.Parent = modeIconWrap
+    local mc1 = Instance.new("UICorner"); mc1.CornerRadius = UDim.new(0, 2); mc1.Parent = modeCol1
+
+    local modeCol2 = Instance.new("Frame")
+    modeCol2.Name = "Col2"
+    modeCol2.Size = UDim2.new(0, 5, 1, 0)
+    modeCol2.Position = UDim2.new(1, -5, 0, 0)
+    modeCol2.BackgroundColor3 = THEME.TextDim
+    modeCol2.BorderSizePixel = 0
+    modeCol2.Parent = modeIconWrap
+    local mc2 = Instance.new("UICorner"); mc2.CornerRadius = UDim.new(0, 2); mc2.Parent = modeCol2
 
     local ZoomBtn = Instance.new("TextButton")
     ZoomBtn.Name = "ZoomBtn"
     ZoomBtn.Size = UDim2.new(0, 24, 0, 24)
     ZoomBtn.BackgroundTransparency = 1
-    ZoomBtn.Text = "⛶"
-    ZoomBtn.Font = Enum.Font.GothamBold
-    ZoomBtn.TextSize = 12
-    ZoomBtn.TextColor3 = THEME.TextDim
+    ZoomBtn.Text = ""
     ZoomBtn.AutoButtonColor = false
     ZoomBtn.Parent = WindowControls
 
+    local zoomBox = Instance.new("Frame")
+    zoomBox.Size = UDim2.new(0, 12, 0, 12)
+    zoomBox.Position = UDim2.new(0.5, -6, 0.5, -6)
+    zoomBox.BackgroundTransparency = 1
+    zoomBox.Parent = ZoomBtn
+
+    local zbStroke = Instance.new("UIStroke")
+    zbStroke.Color = THEME.TextDim
+    zbStroke.Thickness = 1.3
+    zbStroke.Parent = zoomBox
+    local zbc = Instance.new("UICorner"); zbc.CornerRadius = UDim.new(0, 2); zbc.Parent = zoomBox
+
     local MinBtn = Instance.new("TextButton")
+    MinBtn.Name = "MinBtn"
     MinBtn.Size = UDim2.new(0, 24, 0, 24)
     MinBtn.BackgroundTransparency = 1
-    MinBtn.Text = "—"
-    MinBtn.Font = Enum.Font.GothamBold
-    MinBtn.TextSize = 12
-    MinBtn.TextColor3 = THEME.TextDim
+    MinBtn.Text = ""
     MinBtn.AutoButtonColor = false
     MinBtn.Parent = WindowControls
+
+    local minLine = Instance.new("Frame")
+    minLine.Size = UDim2.new(0, 11, 0, 2)
+    minLine.Position = UDim2.new(0.5, -5.5, 0.5, 0)
+    minLine.BackgroundColor3 = THEME.TextDim
+    minLine.BorderSizePixel = 0
+    minLine.Parent = MinBtn
+    local mlc = Instance.new("UICorner"); mlc.CornerRadius = UDim.new(1, 0); mlc.Parent = minLine
 
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Size = UDim2.new(0, 24, 0, 24)
     CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Text = "✕"
-    CloseBtn.Font = Enum.Font.GothamBold
-    CloseBtn.TextSize = 12
+    CloseBtn.Text = "×"
+    CloseBtn.Font = Enum.Font.GothamMedium
+    CloseBtn.TextSize = 17
     CloseBtn.TextColor3 = THEME.TextDim
     CloseBtn.AutoButtonColor = false
     CloseBtn.Parent = WindowControls
 
-    for _, b in ipairs({ModeBtn, ZoomBtn, MinBtn}) do
-        b.MouseEnter:Connect(function()
-            TweenService:Create(b, TWEEN_FAST, {TextColor3 = THEME.TextPrimary}):Play()
-        end)
-        b.MouseLeave:Connect(function()
-            TweenService:Create(b, TWEEN_FAST, {TextColor3 = THEME.TextDim}):Play()
-        end)
+    local function setControlHover(btn, hover)
+        local col = hover and THEME.TextPrimary or THEME.TextDim
+        if btn == ModeBtn then
+            modeCol1.BackgroundColor3 = col
+            modeCol2.BackgroundColor3 = col
+        elseif btn == ZoomBtn then
+            zbStroke.Color = col
+        elseif btn == MinBtn then
+            minLine.BackgroundColor3 = col
+        end
     end
+
+    for _, b in ipairs({ModeBtn, ZoomBtn, MinBtn}) do
+        b.MouseEnter:Connect(function() setControlHover(b, true) end)
+        b.MouseLeave:Connect(function() setControlHover(b, false) end)
+    end
+
     CloseBtn.MouseEnter:Connect(function()
         TweenService:Create(CloseBtn, TWEEN_FAST, {TextColor3 = THEME.Accent}):Play()
     end)
@@ -1222,7 +1225,13 @@ function SonLibrary:CreateWindow(config: {
     function WindowObj:SetColumns(cols)
         cols = (cols == 1) and 1 or 2
         WindowObj.CurrentColumns = cols
-        ModeBtn.Text = (cols == 1) and "⚌" or "◫"
+        if cols == 1 then
+            modeCol2.Visible = false
+            modeCol1.Size = UDim2.new(1, 0, 1, 0)
+        else
+            modeCol2.Visible = true
+            modeCol1.Size = UDim2.new(0, 5, 1, 0)
+        end
 
         local targetSize = (cols == 1) and WindowObj.SingleColSize or WindowObj.NormalSize
         if not WindowObj.IsZoomed then
@@ -1236,12 +1245,10 @@ function SonLibrary:CreateWindow(config: {
             ContentArea.Size = UDim2.new(1, -165, 1, -58)
             Sidebar.Size = UDim2.new(0, 135, 1, -58)
             SearchBox.Size = UDim2.new(0, 120, 0, 26)
-            CenterTitle.Size = UDim2.new(0, 180, 1, 0)
         else
             ContentArea.Size = UDim2.new(1, -188, 1, -58)
             Sidebar.Size = UDim2.new(0, 155, 1, -58)
             SearchBox.Size = UDim2.new(0, 160, 0, 26)
-            CenterTitle.Size = UDim2.new(0, 240, 1, 0)
         end
 
         for _, tab in ipairs(WindowObj.Tabs) do
@@ -1258,7 +1265,8 @@ function SonLibrary:CreateWindow(config: {
 
     function WindowObj:ToggleZoom()
         WindowObj.IsZoomed = not WindowObj.IsZoomed
-        ZoomBtn.Text = WindowObj.IsZoomed and "🗗" or "⛶"
+        zoomBox.Size = WindowObj.IsZoomed and UDim2.new(0, 8, 0, 8) or UDim2.new(0, 12, 0, 12)
+        zoomBox.Position = WindowObj.IsZoomed and UDim2.new(0.5, -4, 0.5, -4) or UDim2.new(0.5, -6, 0.5, -6)
         if WindowObj.IsZoomed then
             safeTween(Main, TWEEN_FAST, {
                 Size = WindowObj.ZoomedSize,
@@ -1719,20 +1727,30 @@ function SonLibrary:CreateWindow(config: {
             bList.SortOrder = Enum.SortOrder.LayoutOrder
             bList.Parent = BodyContainer
 
-            if isCollapsible then
-                local isCollapsed = not defaultOpen
-                local headClick = Instance.new("TextButton")
-                headClick.Size = UDim2.new(1, 0, 1, 0)
-                headClick.BackgroundTransparency = 1
-                headClick.Text = ""
-                headClick.Parent = header
-
-                headClick.MouseButton1Click:Connect(function()
-                    isCollapsed = not isCollapsed
-                    BodyContainer.Visible = not isCollapsed
-                    TweenService:Create(icon, TWEEN_FAST, {Rotation = isCollapsed and 0 or 90}):Play()
-                end)
+            local isCollapsed = not defaultOpen
+            if isCollapsed then
+                icon.Rotation = -90
             end
+
+            local headClick = Instance.new("TextButton")
+            headClick.Size = UDim2.new(1, 0, 1, 0)
+            headClick.BackgroundTransparency = 1
+            headClick.Text = ""
+            headClick.AutoButtonColor = false
+            headClick.Parent = header
+
+            headClick.MouseEnter:Connect(function()
+                safeTween(title, TWEEN_FAST, {TextColor3 = Color3.fromRGB(255, 255, 255)})
+            end)
+            headClick.MouseLeave:Connect(function()
+                safeTween(title, TWEEN_FAST, {TextColor3 = THEME.TextPrimary})
+            end)
+
+            headClick.MouseButton1Click:Connect(function()
+                isCollapsed = not isCollapsed
+                BodyContainer.Visible = not isCollapsed
+                safeTween(icon, TWEEN_FAST, {Rotation = isCollapsed and -90 or 0})
+            end)
 
             local ActiveDropdown = nil
             local KeybindListening = nil
@@ -2171,6 +2189,25 @@ function SonLibrary:CreateWindow(config: {
                 fc.CornerRadius = UDim.new(1, 0)
                 fc.Parent = fill
 
+                local knob = Instance.new("Frame")
+                knob.Name = "Knob"
+                knob.Size = UDim2.new(0, 12, 0, 12)
+                knob.Position = UDim2.new(1, -6, 0.5, -6)
+                knob.BackgroundColor3 = THEME.Accent
+                knob.BorderSizePixel = 0
+                knob.ZIndex = 5
+                knob.Parent = fill
+
+                local kc = Instance.new("UICorner")
+                kc.CornerRadius = UDim.new(1, 0)
+                kc.Parent = knob
+
+                local ks = Instance.new("UIStroke")
+                ks.Color = Color3.fromRGB(255, 255, 255)
+                ks.Thickness = 1.2
+                ks.Transparency = 0.3
+                ks.Parent = knob
+
                 local dragging = false
                 local function updateSlider(input)
                     local trackAbsX = track.AbsolutePosition.X
@@ -2189,6 +2226,7 @@ function SonLibrary:CreateWindow(config: {
                 track.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         dragging = true
+                        safeTween(knob, TWEEN_FAST, {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(1, -7, 0.5, -7)})
                         updateSlider(input)
                     end
                 end)
@@ -2200,6 +2238,7 @@ function SonLibrary:CreateWindow(config: {
                 UserInputService.InputEnded:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                         dragging = false
+                        safeTween(knob, TWEEN_FAST, {Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(1, -6, 0.5, -6)})
                     end
                 end)
 
@@ -2332,11 +2371,13 @@ function SonLibrary:CreateWindow(config: {
                     local absPos = dropBtn.AbsolutePosition
                     local absSize = dropBtn.AbsoluteSize
                     local mainPos = Main.AbsolutePosition
+                    local targetH = math.min(#options * 28 + 8, 160)
 
                     popover = Instance.new("Frame")
-                    popover.Size = UDim2.new(0, absSize.X, 0, math.min(#options * 25 + 6, 135))
+                    popover.Size = UDim2.new(0, absSize.X, 0, 0)
                     popover.Position = UDim2.new(0, absPos.X - mainPos.X, 0, absPos.Y - mainPos.Y + absSize.Y + 3)
                     popover.BackgroundColor3 = THEME.CardBg
+                    popover.ClipsDescendants = true
                     popover.ZIndex = 500
                     popover.Parent = Main
 
@@ -2349,30 +2390,75 @@ function SonLibrary:CreateWindow(config: {
                     ps.Thickness = 1
                     ps.Parent = popover
 
+                    safeTween(popover, TWEEN_FAST, {Size = UDim2.new(0, absSize.X, 0, targetH)})
+
                     local scroll = Instance.new("ScrollingFrame")
                     scroll.Size = UDim2.new(1, 0, 1, 0)
                     scroll.BackgroundTransparency = 1
                     scroll.ScrollBarThickness = 2
+                    scroll.ScrollBarImageColor3 = THEME.Accent
                     scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
                     scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
                     scroll.ZIndex = 501
                     scroll.Parent = popover
 
+                    local sPad = Instance.new("UIPadding")
+                    sPad.PaddingTop = UDim.new(0, 4)
+                    sPad.PaddingBottom = UDim.new(0, 4)
+                    sPad.PaddingLeft = UDim.new(0, 4)
+                    sPad.PaddingRight = UDim.new(0, 4)
+                    sPad.Parent = scroll
+
                     local sList = Instance.new("UIListLayout")
-                    sList.Padding = UDim.new(0, 1)
+                    sList.Padding = UDim.new(0, 2)
                     sList.Parent = scroll
 
                     for _, opt in ipairs(options) do
+                        local isSel = (opt == selected)
                         local optBtn = Instance.new("TextButton")
-                        optBtn.Size = UDim2.new(1, 0, 0, 24)
-                        optBtn.BackgroundTransparency = 1
-                        optBtn.Text = "  " .. opt
-                        optBtn.Font = Enum.Font.GothamMedium
-                        optBtn.TextSize = 10.5
-                        optBtn.TextColor3 = (opt == selected) and THEME.Accent or THEME.TextPrimary
-                        optBtn.TextXAlignment = Enum.TextXAlignment.Left
+                        optBtn.Size = UDim2.new(1, 0, 0, 26)
+                        optBtn.BackgroundColor3 = isSel and THEME.SidebarActive or THEME.CardBg
+                        optBtn.BackgroundTransparency = isSel and 0 or 1
+                        optBtn.Text = ""
+                        optBtn.AutoButtonColor = false
                         optBtn.ZIndex = 502
                         optBtn.Parent = scroll
+
+                        local obc = Instance.new("UICorner")
+                        obc.CornerRadius = UDim.new(0, 4)
+                        obc.Parent = optBtn
+
+                        local optLbl = Instance.new("TextLabel")
+                        optLbl.Size = UDim2.new(1, -26, 1, 0)
+                        optLbl.Position = UDim2.new(0, 8, 0, 0)
+                        optLbl.BackgroundTransparency = 1
+                        optLbl.Text = opt
+                        optLbl.Font = Enum.Font.GothamMedium
+                        optLbl.TextSize = 11
+                        optLbl.TextColor3 = isSel and THEME.Accent or THEME.TextPrimary
+                        optLbl.TextXAlignment = Enum.TextXAlignment.Left
+                        optLbl.ZIndex = 503
+                        optLbl.Parent = optBtn
+
+                        local checkMark = Instance.new("TextLabel")
+                        checkMark.Size = UDim2.new(0, 16, 1, 0)
+                        checkMark.Position = UDim2.new(1, -20, 0, 0)
+                        checkMark.BackgroundTransparency = 1
+                        checkMark.Text = isSel and "✓" or ""
+                        checkMark.Font = Enum.Font.GothamBold
+                        checkMark.TextSize = 11
+                        checkMark.TextColor3 = THEME.Accent
+                        checkMark.ZIndex = 503
+                        checkMark.Parent = optBtn
+
+                        optBtn.MouseEnter:Connect(function()
+                            safeTween(optBtn, TWEEN_FAST, {BackgroundTransparency = 0, BackgroundColor3 = THEME.SidebarActive})
+                        end)
+                        optBtn.MouseLeave:Connect(function()
+                            if opt ~= selected then
+                                safeTween(optBtn, TWEEN_FAST, {BackgroundTransparency = 1})
+                            end
+                        end)
 
                         optBtn.MouseButton1Click:Connect(function()
                             selected = opt
@@ -2547,11 +2633,13 @@ function SonLibrary:CreateWindow(config: {
                     local absPos = dropBtn.AbsolutePosition
                     local absSize = dropBtn.AbsoluteSize
                     local mainPos = Main.AbsolutePosition
+                    local targetH = math.min(#options * 28 + 8, 160)
 
                     popover = Instance.new("Frame")
-                    popover.Size = UDim2.new(0, absSize.X, 0, math.min(#options * 25 + 6, 135))
+                    popover.Size = UDim2.new(0, absSize.X, 0, 0)
                     popover.Position = UDim2.new(0, absPos.X - mainPos.X, 0, absPos.Y - mainPos.Y + absSize.Y + 3)
                     popover.BackgroundColor3 = THEME.CardBg
+                    popover.ClipsDescendants = true
                     popover.ZIndex = 500
                     popover.Parent = Main
 
@@ -2564,36 +2652,97 @@ function SonLibrary:CreateWindow(config: {
                     ps.Thickness = 1
                     ps.Parent = popover
 
+                    safeTween(popover, TWEEN_FAST, {Size = UDim2.new(0, absSize.X, 0, targetH)})
+
                     local scroll = Instance.new("ScrollingFrame")
                     scroll.Size = UDim2.new(1, 0, 1, 0)
                     scroll.BackgroundTransparency = 1
                     scroll.ScrollBarThickness = 2
+                    scroll.ScrollBarImageColor3 = THEME.Accent
                     scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
                     scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
                     scroll.ZIndex = 501
                     scroll.Parent = popover
 
+                    local sPad = Instance.new("UIPadding")
+                    sPad.PaddingTop = UDim.new(0, 4)
+                    sPad.PaddingBottom = UDim.new(0, 4)
+                    sPad.PaddingLeft = UDim.new(0, 4)
+                    sPad.PaddingRight = UDim.new(0, 4)
+                    sPad.Parent = scroll
+
                     local sList = Instance.new("UIListLayout")
-                    sList.Padding = UDim.new(0, 1)
+                    sList.Padding = UDim.new(0, 2)
                     sList.Parent = scroll
 
                     for _, opt in ipairs(options) do
-                        local isSel = selectedMap[opt] == true
+                        local isSel = (selectedMap[opt] == true)
                         local optBtn = Instance.new("TextButton")
-                        optBtn.Size = UDim2.new(1, 0, 0, 24)
+                        optBtn.Size = UDim2.new(1, 0, 0, 26)
+                        optBtn.BackgroundColor3 = THEME.SidebarActive
                         optBtn.BackgroundTransparency = 1
-                        optBtn.Text = (isSel and " [x] " or " [ ] ") .. opt
-                        optBtn.Font = Enum.Font.GothamMedium
-                        optBtn.TextSize = 10.5
-                        optBtn.TextColor3 = isSel and THEME.Accent or THEME.TextPrimary
-                        optBtn.TextXAlignment = Enum.TextXAlignment.Left
+                        optBtn.Text = ""
+                        optBtn.AutoButtonColor = false
                         optBtn.ZIndex = 502
                         optBtn.Parent = scroll
 
+                        local obc = Instance.new("UICorner")
+                        obc.CornerRadius = UDim.new(0, 4)
+                        obc.Parent = optBtn
+
+                        local cbox = Instance.new("Frame")
+                        cbox.Size = UDim2.new(0, 14, 0, 14)
+                        cbox.Position = UDim2.new(0, 6, 0.5, -7)
+                        cbox.BackgroundColor3 = isSel and THEME.Accent or THEME.BadgeBg
+                        cbox.BorderSizePixel = 0
+                        cbox.ZIndex = 503
+                        cbox.Parent = optBtn
+
+                        local cbc = Instance.new("UICorner")
+                        cbc.CornerRadius = UDim.new(0, 3)
+                        cbc.Parent = cbox
+
+                        local cbs = Instance.new("UIStroke")
+                        cbs.Color = isSel and THEME.Accent or THEME.Border
+                        cbs.Thickness = 0.8
+                        cbs.Parent = cbox
+
+                        local tickLbl = Instance.new("TextLabel")
+                        tickLbl.Size = UDim2.new(1, 0, 1, 0)
+                        tickLbl.BackgroundTransparency = 1
+                        tickLbl.Text = isSel and "✓" or ""
+                        tickLbl.Font = Enum.Font.GothamBold
+                        tickLbl.TextSize = 10
+                        tickLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        tickLbl.ZIndex = 504
+                        tickLbl.Parent = cbox
+
+                        local optLbl = Instance.new("TextLabel")
+                        optLbl.Size = UDim2.new(1, -30, 1, 0)
+                        optLbl.Position = UDim2.new(0, 26, 0, 0)
+                        optLbl.BackgroundTransparency = 1
+                        optLbl.Text = opt
+                        optLbl.Font = Enum.Font.GothamMedium
+                        optLbl.TextSize = 11
+                        optLbl.TextColor3 = isSel and Color3.fromRGB(255, 255, 255) or THEME.TextPrimary
+                        optLbl.TextXAlignment = Enum.TextXAlignment.Left
+                        optLbl.ZIndex = 503
+                        optLbl.Parent = optBtn
+
+                        optBtn.MouseEnter:Connect(function()
+                            safeTween(optBtn, TWEEN_FAST, {BackgroundTransparency = 0})
+                        end)
+                        optBtn.MouseLeave:Connect(function()
+                            safeTween(optBtn, TWEEN_FAST, {BackgroundTransparency = 1})
+                        end)
+
                         optBtn.MouseButton1Click:Connect(function()
                             selectedMap[opt] = not selectedMap[opt]
-                            optBtn.Text = (selectedMap[opt] and " [x] " or " [ ] ") .. opt
-                            optBtn.TextColor3 = selectedMap[opt] and THEME.Accent or THEME.TextPrimary
+                            local nowSel = (selectedMap[opt] == true)
+                            cbox.BackgroundColor3 = nowSel and THEME.Accent or THEME.BadgeBg
+                            cbs.Color = nowSel and THEME.Accent or THEME.Border
+                            tickLbl.Text = nowSel and "✓" or ""
+                            optLbl.TextColor3 = nowSel and Color3.fromRGB(255, 255, 255) or THEME.TextPrimary
                             updateLabel()
                             local currentList = getList()
                             if flag then SonLibrary.Flags[flag] = currentList end
