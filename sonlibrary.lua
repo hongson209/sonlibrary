@@ -807,15 +807,28 @@ function SonLibrary:CreateWindow(config: {
         end)
     end
 
-    local Main = Instance.new("Frame")
+    local WindowHolder = Instance.new("Frame")
+    WindowHolder.Name = "WindowHolder"
+    WindowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+    WindowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
+    WindowHolder.Size = UDim2.new(0, 790, 0, 490)
+    WindowHolder.BackgroundTransparency = 1
+    WindowHolder.BorderSizePixel = 0
+    WindowHolder.Visible = (KeyPassed == true)
+    WindowHolder.Parent = ScreenGui
+
+    local WindowScale = Instance.new("UIScale")
+    WindowScale.Scale = 1
+    WindowScale.Parent = WindowHolder
+
+    local Main = Instance.new("CanvasGroup")
     Main.Name = "MainFrame"
-    Main.Size = UDim2.new(0, 790, 0, 490)
-    Main.Position = UDim2.new(0.5, -395, 0.5, -245)
+    Main.Size = UDim2.new(1, 0, 1, 0)
+    Main.Position = UDim2.new(0, 0, 0, 0)
     Main.BackgroundColor3 = THEME.Background
     Main.BorderSizePixel = 0
-    Main.ClipsDescendants = false
-    Main.Visible = (KeyPassed == true)
-    Main.Parent = ScreenGui
+    Main.GroupTransparency = 0
+    Main.Parent = WindowHolder
 
     local MainCorner = Instance.new("UICorner")
     MainCorner.CornerRadius = UDim.new(0, 12)
@@ -826,28 +839,120 @@ function SonLibrary:CreateWindow(config: {
     MainStroke.Thickness = 1.2
     MainStroke.Parent = Main
 
-    local GlowBackdrop = Instance.new("ImageLabel")
-    GlowBackdrop.Name = "GlowBackdrop"
-    GlowBackdrop.BackgroundTransparency = 1
-    GlowBackdrop.Position = UDim2.new(0, -45, 0, -45)
-    GlowBackdrop.Size = UDim2.new(1, 90, 1, 90)
-    GlowBackdrop.ZIndex = 0
-    GlowBackdrop.Image = "rbxassetid://5028857084"
-    GlowBackdrop.ImageColor3 = THEME.AccentDark
-    GlowBackdrop.ImageTransparency = 0.83
-    GlowBackdrop.ScaleType = Enum.ScaleType.Slice
-    GlowBackdrop.SliceCenter = Rect.new(24, 24, 276, 276)
-    GlowBackdrop.Parent = Main
+    local WindowObj = {
+        Holder = WindowHolder,
+        MainFrame = Main,
+        ScreenGui = ScreenGui,
+        Tabs = {},
+        ActiveTab = nil,
+        RegisteredRows = {},
+        IsVisible = (KeyPassed == true),
+        CurrentColumns = WindowDefaultColumns or 2,
+        IsZoomed = false,
+        NormalSize = UDim2.new(0, 790, 0, 490),
+        SingleColSize = UDim2.new(0, 560, 0, 520),
+        ZoomedSize = UDim2.new(0, 960, 0, 600),
+        TargetScale = 1,
+    }
+
+    local function updateResponsiveScale()
+        local vp = Camera.ViewportSize
+        if vp.X <= 50 or vp.Y <= 50 then return end
+
+        local targetW = (WindowObj.CurrentColumns == 1) and WindowObj.SingleColSize.X.Offset or WindowObj.NormalSize.X.Offset
+        local targetH = (WindowObj.CurrentColumns == 1) and WindowObj.SingleColSize.Y.Offset or WindowObj.NormalSize.Y.Offset
+        if WindowObj.IsZoomed then
+            targetW = WindowObj.ZoomedSize.X.Offset
+            targetH = WindowObj.ZoomedSize.Y.Offset
+        end
+
+        local fitW = (vp.X * 0.94) / targetW
+        local fitH = (vp.Y * 0.90) / targetH
+        local fit = math.min(fitW, fitH)
+        local finalScale = math.clamp(math.min(1, fit), 0.65, 1.1)
+
+        WindowObj.TargetScale = finalScale
+        if WindowObj.IsVisible then
+            safeTween(WindowScale, TWEEN_FAST, {Scale = finalScale})
+        end
+    end
+
+    Camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateResponsiveScale)
+    task.defer(updateResponsiveScale)
+
+    local isUIVisible = (KeyPassed == true)
+    local savedWindowPos = WindowHolder.Position
+
+    local activeWindowTween = nil
+    local function setWindowVisible(state)
+        isUIVisible = state
+        WindowObj.IsVisible = state
+        local baseScale = WindowObj.TargetScale or 1
+
+        if activeWindowTween then
+            pcall(function() activeWindowTween:Cancel() end)
+            activeWindowTween = nil
+        end
+
+        if isUIVisible then
+            WindowHolder.Position = savedWindowPos
+            Main.GroupTransparency = 1
+            WindowScale.Scale = baseScale * 0.985
+
+            activeWindowTween = safeTween(Main, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                GroupTransparency = 0
+            })
+            safeTween(WindowScale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Scale = baseScale
+            })
+        else
+            savedWindowPos = WindowHolder.Position
+            activeWindowTween = safeTween(Main, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                GroupTransparency = 1
+            })
+            safeTween(WindowScale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Scale = baseScale * 0.985
+            })
+            activeWindowTween.Completed:Connect(function()
+                if not isUIVisible then
+                    WindowHolder.Position = UDim2.new(0.5, savedWindowPos.X.Offset, 4, 0)
+                end
+            end)
+        end
+    end
+
+    function WindowObj:Toggle(state)
+        if state ~= nil then
+            setWindowVisible(state)
+        else
+            setWindowVisible(not isUIVisible)
+        end
+    end
+
+    -- Floating SonHub Toggle Button in dedicated topmost ScreenGui
+    local FloatingGui = nil
+    pcall(function()
+        if safeParent:FindFirstChild("SonHubFloatingGui") then
+            safeParent.SonHubFloatingGui:Destroy()
+        end
+        FloatingGui = Instance.new("ScreenGui")
+        FloatingGui.Name = "SonHubFloatingGui"
+        FloatingGui.ResetOnSpawn = false
+        FloatingGui.DisplayOrder = 999999
+        FloatingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        FloatingGui.Parent = safeParent
+    end)
+    local floatParent = FloatingGui or ScreenGui
 
     local FloatingBtn = Instance.new("Frame")
     FloatingBtn.Name = "SonHubFloatingToggle"
     FloatingBtn.Size = UDim2.new(0, 46, 0, 46)
-    FloatingBtn.Position = UDim2.new(0, 20, 0, 110)
+    FloatingBtn.Position = UDim2.new(0, 16, 0.45, 0)
     FloatingBtn.BackgroundColor3 = Color3.fromRGB(18, 14, 16)
     FloatingBtn.BackgroundTransparency = 0.25
     FloatingBtn.BorderSizePixel = 0
-    FloatingBtn.ZIndex = 990
-    FloatingBtn.Parent = ScreenGui
+    FloatingBtn.ZIndex = 1000
+    FloatingBtn.Parent = floatParent
 
     local fbCorner = Instance.new("UICorner")
     fbCorner.CornerRadius = UDim.new(0, 10)
@@ -855,7 +960,7 @@ function SonLibrary:CreateWindow(config: {
 
     local fbStroke = Instance.new("UIStroke")
     fbStroke.Color = THEME.Accent
-    fbStroke.Thickness = 1.4
+    fbStroke.Thickness = 1.5
     fbStroke.Parent = FloatingBtn
 
     local fbLogo = Instance.new("ImageLabel")
@@ -866,18 +971,23 @@ function SonLibrary:CreateWindow(config: {
     fbLogo.Image = LogoId
     fbLogo.ScaleType = Enum.ScaleType.Fit
     fbLogo.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    fbLogo.ZIndex = 991
+    fbLogo.ZIndex = 1001
     fbLogo.Parent = FloatingBtn
 
     local fbClick = Instance.new("TextButton")
     fbClick.Size = UDim2.new(1, 0, 1, 0)
     fbClick.BackgroundTransparency = 1
     fbClick.Text = ""
-    fbClick.ZIndex = 992
+    fbClick.AutoButtonColor = false
+    fbClick.Active = true
+    fbClick.ZIndex = 1002
     fbClick.Parent = FloatingBtn
 
     do
-        local fbDragging, fbDragStart, fbStartPos
+        local fbDragging = false
+        local fbDragStart = Vector3.zero
+        local fbStartPos = FloatingBtn.Position
+
         fbClick.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 fbDragging = true
@@ -885,13 +995,18 @@ function SonLibrary:CreateWindow(config: {
                 fbStartPos = FloatingBtn.Position
             end
         end)
+
         UserInputService.InputChanged:Connect(function(input)
             if fbDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 local delta = input.Position - fbDragStart
-                FloatingBtn.Position = UDim2.new(fbStartPos.X.Scale, fbStartPos.X.Offset + delta.X, fbStartPos.Y.Scale, fbStartPos.Y.Offset + delta.Y)
+                FloatingBtn.Position = UDim2.new(
+                    fbStartPos.X.Scale, fbStartPos.X.Offset + delta.X,
+                    fbStartPos.Y.Scale, fbStartPos.Y.Offset + delta.Y
+                )
             end
         end)
-        UserInputService.InputEnded:Connect(function(input)
+
+        local function endFbDrag(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 if fbDragging then
                     fbDragging = false
@@ -901,37 +1016,75 @@ function SonLibrary:CreateWindow(config: {
                     end
                 end
             end
+        end
+
+        fbClick.InputEnded:Connect(endFbDrag)
+        UserInputService.InputEnded:Connect(function(input)
+            if fbDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+                fbDragging = false
+            end
         end)
     end
 
     local TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
     TopBar.Size = UDim2.new(1, 0, 0, 56)
     TopBar.BackgroundTransparency = 1
+    TopBar.Active = true
     TopBar.Parent = Main
 
+    local DragHandle = Instance.new("TextButton")
+    DragHandle.Name = "DragHandle"
+    DragHandle.Size = UDim2.new(1, 0, 1, 0)
+    DragHandle.BackgroundTransparency = 1
+    DragHandle.Text = ""
+    DragHandle.AutoButtonColor = false
+    DragHandle.Active = true
+    DragHandle.ZIndex = 1
+    DragHandle.Parent = TopBar
+
     do
-        local dragging, dragStart, startPos
-        TopBar.InputBegan:Connect(function(input)
+        local dragging = false
+        local dragStart = Vector3.zero
+        local startPos = WindowHolder.Position
+
+        local function startWindowDrag(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                if input.Target and (input.Target:IsA("TextBox") or input.Target:IsA("TextButton") or input.Target:IsA("ImageButton")) then
-                    return
-                end
                 dragging = true
                 dragStart = input.Position
-                startPos = Main.Position
+                startPos = WindowHolder.Position
+            end
+        end
+
+        DragHandle.InputBegan:Connect(startWindowDrag)
+
+        Main.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                local relY = input.Position.Y - Main.AbsolutePosition.Y
+                if relY >= 0 and relY <= 56 then
+                    startWindowDrag(input)
+                end
             end
         end)
+
         UserInputService.InputChanged:Connect(function(input)
             if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 local delta = input.Position - dragStart
-                Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                WindowHolder.Position = UDim2.new(
+                    startPos.X.Scale, startPos.X.Offset + delta.X,
+                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
+                )
             end
         end)
-        UserInputService.InputEnded:Connect(function(input)
+
+        local function stopWindowDrag(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = false
             end
-        end)
+        end
+
+        DragHandle.InputEnded:Connect(stopWindowDrag)
+        UserInputService.InputEnded:Connect(stopWindowDrag)
     end
 
     local MainLogoHolder = Instance.new("Frame")
@@ -939,6 +1092,7 @@ function SonLibrary:CreateWindow(config: {
     MainLogoHolder.Size = UDim2.new(0, 34, 0, 34)
     MainLogoHolder.Position = UDim2.new(0, 20, 0.5, -17)
     MainLogoHolder.BackgroundTransparency = 1
+    MainLogoHolder.ZIndex = 5
     MainLogoHolder.Parent = TopBar
 
     local MainLogoImg = Instance.new("ImageLabel")
@@ -949,14 +1103,16 @@ function SonLibrary:CreateWindow(config: {
     MainLogoImg.Image = LogoId
     MainLogoImg.ScaleType = Enum.ScaleType.Fit
     MainLogoImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    MainLogoImg.ZIndex = 3
+    MainLogoImg.ZIndex = 6
     MainLogoImg.Parent = MainLogoHolder
 
     local SearchBox = Instance.new("Frame")
+    SearchBox.Name = "SearchBox"
     SearchBox.Size = UDim2.new(0, 160, 0, 26)
     SearchBox.Position = UDim2.new(0, 68, 0.5, -13)
     SearchBox.BackgroundColor3 = THEME.CardBg
     SearchBox.BorderSizePixel = 0
+    SearchBox.ZIndex = 5
     SearchBox.Parent = TopBar
 
     local SearchCorner = Instance.new("UICorner")
@@ -974,6 +1130,7 @@ function SonLibrary:CreateWindow(config: {
     SearchIcon.BackgroundTransparency = 1
     SearchIcon.Image = ICONS.Search
     SearchIcon.ImageColor3 = THEME.TextMuted
+    SearchIcon.ZIndex = 6
     SearchIcon.Parent = SearchBox
 
     local SearchInput = Instance.new("TextBox")
@@ -986,66 +1143,60 @@ function SonLibrary:CreateWindow(config: {
     SearchInput.Size = UDim2.new(1, -32, 1, 0)
     SearchInput.BackgroundTransparency = 1
     SearchInput.TextXAlignment = Enum.TextXAlignment.Left
+    SearchInput.ZIndex = 6
     SearchInput.Parent = SearchBox
 
     local WindowControls = Instance.new("Frame")
     WindowControls.Name = "WindowControls"
-    WindowControls.Size = UDim2.new(0, 108, 0, 24)
+    WindowControls.Size = UDim2.new(0, 84, 0, 24)
     WindowControls.Position = UDim2.new(1, -14, 0.5, 0)
     WindowControls.AnchorPoint = Vector2.new(1, 0.5)
     WindowControls.BackgroundTransparency = 1
+    WindowControls.ZIndex = 5
     WindowControls.Parent = TopBar
 
     local wcList = Instance.new("UIListLayout")
     wcList.FillDirection = Enum.FillDirection.Horizontal
     wcList.HorizontalAlignment = Enum.HorizontalAlignment.Right
     wcList.VerticalAlignment = Enum.VerticalAlignment.Center
+    wcList.SortOrder = Enum.SortOrder.LayoutOrder
     wcList.Padding = UDim.new(0, 4)
     wcList.Parent = WindowControls
 
-    local ModeBtn = Instance.new("TextButton")
-    ModeBtn.Name = "ModeBtn"
-    ModeBtn.Size = UDim2.new(0, 24, 0, 24)
-    ModeBtn.BackgroundTransparency = 1
-    ModeBtn.Text = ""
-    ModeBtn.AutoButtonColor = false
-    ModeBtn.Parent = WindowControls
+    local MinBtn = Instance.new("TextButton")
+    MinBtn.Name = "MinBtn"
+    MinBtn.Size = UDim2.new(0, 24, 0, 24)
+    MinBtn.LayoutOrder = 1
+    MinBtn.BackgroundTransparency = 1
+    MinBtn.Text = ""
+    MinBtn.AutoButtonColor = false
+    MinBtn.ZIndex = 6
+    MinBtn.Parent = WindowControls
 
-    local modeIconWrap = Instance.new("Frame")
-    modeIconWrap.Size = UDim2.new(0, 13, 0, 12)
-    modeIconWrap.Position = UDim2.new(0.5, -6.5, 0.5, -6)
-    modeIconWrap.BackgroundTransparency = 1
-    modeIconWrap.Parent = ModeBtn
-
-    local modeCol1 = Instance.new("Frame")
-    modeCol1.Name = "Col1"
-    modeCol1.Size = UDim2.new(0, 5, 1, 0)
-    modeCol1.BackgroundColor3 = THEME.TextDim
-    modeCol1.BorderSizePixel = 0
-    modeCol1.Parent = modeIconWrap
-    local mc1 = Instance.new("UICorner"); mc1.CornerRadius = UDim.new(0, 2); mc1.Parent = modeCol1
-
-    local modeCol2 = Instance.new("Frame")
-    modeCol2.Name = "Col2"
-    modeCol2.Size = UDim2.new(0, 5, 1, 0)
-    modeCol2.Position = UDim2.new(1, -5, 0, 0)
-    modeCol2.BackgroundColor3 = THEME.TextDim
-    modeCol2.BorderSizePixel = 0
-    modeCol2.Parent = modeIconWrap
-    local mc2 = Instance.new("UICorner"); mc2.CornerRadius = UDim.new(0, 2); mc2.Parent = modeCol2
+    local minLine = Instance.new("Frame")
+    minLine.Size = UDim2.new(0, 11, 0, 2)
+    minLine.Position = UDim2.new(0.5, -5.5, 0.5, 0)
+    minLine.BackgroundColor3 = THEME.TextDim
+    minLine.BorderSizePixel = 0
+    minLine.ZIndex = 7
+    minLine.Parent = MinBtn
+    local mlc = Instance.new("UICorner"); mlc.CornerRadius = UDim.new(1, 0); mlc.Parent = minLine
 
     local ZoomBtn = Instance.new("TextButton")
     ZoomBtn.Name = "ZoomBtn"
     ZoomBtn.Size = UDim2.new(0, 24, 0, 24)
+    ZoomBtn.LayoutOrder = 2
     ZoomBtn.BackgroundTransparency = 1
     ZoomBtn.Text = ""
     ZoomBtn.AutoButtonColor = false
+    ZoomBtn.ZIndex = 6
     ZoomBtn.Parent = WindowControls
 
     local zoomBox = Instance.new("Frame")
     zoomBox.Size = UDim2.new(0, 12, 0, 12)
     zoomBox.Position = UDim2.new(0.5, -6, 0.5, -6)
     zoomBox.BackgroundTransparency = 1
+    zoomBox.ZIndex = 7
     zoomBox.Parent = ZoomBtn
 
     local zbStroke = Instance.new("UIStroke")
@@ -1054,48 +1205,32 @@ function SonLibrary:CreateWindow(config: {
     zbStroke.Parent = zoomBox
     local zbc = Instance.new("UICorner"); zbc.CornerRadius = UDim.new(0, 2); zbc.Parent = zoomBox
 
-    local MinBtn = Instance.new("TextButton")
-    MinBtn.Name = "MinBtn"
-    MinBtn.Size = UDim2.new(0, 24, 0, 24)
-    MinBtn.BackgroundTransparency = 1
-    MinBtn.Text = ""
-    MinBtn.AutoButtonColor = false
-    MinBtn.Parent = WindowControls
-
-    local minLine = Instance.new("Frame")
-    minLine.Size = UDim2.new(0, 11, 0, 2)
-    minLine.Position = UDim2.new(0.5, -5.5, 0.5, 0)
-    minLine.BackgroundColor3 = THEME.TextDim
-    minLine.BorderSizePixel = 0
-    minLine.Parent = MinBtn
-    local mlc = Instance.new("UICorner"); mlc.CornerRadius = UDim.new(1, 0); mlc.Parent = minLine
-
     local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Name = "CloseBtn"
     CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+    CloseBtn.LayoutOrder = 3
     CloseBtn.BackgroundTransparency = 1
     CloseBtn.Text = "×"
     CloseBtn.Font = Enum.Font.GothamMedium
     CloseBtn.TextSize = 17
     CloseBtn.TextColor3 = THEME.TextDim
     CloseBtn.AutoButtonColor = false
+    CloseBtn.ZIndex = 6
     CloseBtn.Parent = WindowControls
 
-    local function setControlHover(btn, hover)
-        local col = hover and THEME.TextPrimary or THEME.TextDim
-        if btn == ModeBtn then
-            modeCol1.BackgroundColor3 = col
-            modeCol2.BackgroundColor3 = col
-        elseif btn == ZoomBtn then
-            zbStroke.Color = col
-        elseif btn == MinBtn then
-            minLine.BackgroundColor3 = col
-        end
-    end
+    MinBtn.MouseEnter:Connect(function()
+        minLine.BackgroundColor3 = THEME.TextPrimary
+    end)
+    MinBtn.MouseLeave:Connect(function()
+        minLine.BackgroundColor3 = THEME.TextDim
+    end)
 
-    for _, b in ipairs({ModeBtn, ZoomBtn, MinBtn}) do
-        b.MouseEnter:Connect(function() setControlHover(b, true) end)
-        b.MouseLeave:Connect(function() setControlHover(b, false) end)
-    end
+    ZoomBtn.MouseEnter:Connect(function()
+        zbStroke.Color = THEME.TextPrimary
+    end)
+    ZoomBtn.MouseLeave:Connect(function()
+        zbStroke.Color = THEME.TextDim
+    end)
 
     CloseBtn.MouseEnter:Connect(function()
         TweenService:Create(CloseBtn, TWEEN_FAST, {TextColor3 = THEME.Accent}):Play()
@@ -1103,6 +1238,7 @@ function SonLibrary:CreateWindow(config: {
     CloseBtn.MouseLeave:Connect(function()
         TweenService:Create(CloseBtn, TWEEN_FAST, {TextColor3 = THEME.TextDim}):Play()
     end)
+
     MinBtn.MouseButton1Click:Connect(function()
         WindowObj:Toggle()
     end)
@@ -1111,6 +1247,7 @@ function SonLibrary:CreateWindow(config: {
     end)
 
     local Sidebar = Instance.new("Frame")
+    Sidebar.Name = "Sidebar"
     Sidebar.Size = UDim2.new(0, 155, 1, -58)
     Sidebar.Position = UDim2.new(0, 14, 0, 54)
     Sidebar.BackgroundTransparency = 1
@@ -1157,7 +1294,8 @@ function SonLibrary:CreateWindow(config: {
     SubLabel.Parent = Footer
 
     local ContentArea = Instance.new("Frame")
-    ContentArea.Size = UDim2.new(1, -188, 1, -58)
+    ContentArea.Name = "ContentArea"
+    ContentArea.Size = UDim2.new(1, -190, 1, -58)
     ContentArea.Position = UDim2.new(0, 176, 0, 52)
     ContentArea.BackgroundTransparency = 1
     ContentArea.Parent = Main
@@ -1175,79 +1313,28 @@ function SonLibrary:CreateWindow(config: {
     dOverlayCorner.CornerRadius = UDim.new(0, 12)
     dOverlayCorner.Parent = DialogOverlay
 
-    local WindowObj = {
-        MainFrame = Main,
-        ScreenGui = ScreenGui,
-        Tabs = {},
-        ActiveTab = nil,
-        RegisteredRows = {},
-        IsVisible = (KeyPassed == true),
-        CurrentColumns = WindowDefaultColumns or 2,
-        IsZoomed = false,
-        NormalSize = UDim2.new(0, 790, 0, 490),
-        SingleColSize = UDim2.new(0, 550, 0, 520),
-        ZoomedSize = UDim2.new(0, 960, 0, 600),
-    }
-
-    local isUIVisible = (KeyPassed == true)
-    local function setWindowVisible(state)
-        isUIVisible = state
-        WindowObj.IsVisible = state
-        if isUIVisible then
-            Main.Visible = true
-            local targetSize = WindowObj.IsZoomed and WindowObj.ZoomedSize or ((WindowObj.CurrentColumns == 1) and WindowObj.SingleColSize or WindowObj.NormalSize)
-            safeTween(Main, TWEEN_SLOW, {
-                Position = UDim2.new(0.5, -targetSize.X.Offset / 2, 0.5, -targetSize.Y.Offset / 2),
-                BackgroundTransparency = 0
-            })
-            safeTween(GlowBackdrop, TWEEN_SLOW, {ImageTransparency = 0.83})
-        else
-            local targetSize = WindowObj.IsZoomed and WindowObj.ZoomedSize or ((WindowObj.CurrentColumns == 1) and WindowObj.SingleColSize or WindowObj.NormalSize)
-            local hideTween = safeTween(Main, TWEEN_SLOW, {
-                Position = UDim2.new(0.5, -targetSize.X.Offset / 2, 0.5, -targetSize.Y.Offset / 2 + 30),
-                BackgroundTransparency = 1
-            })
-            safeTween(GlowBackdrop, TWEEN_SLOW, {ImageTransparency = 1})
-            hideTween.Completed:Connect(function()
-                if not isUIVisible then Main.Visible = false end
-            end)
-        end
-    end
-
-    function WindowObj:Toggle(state)
-        if state ~= nil then
-            setWindowVisible(state)
-        else
-            setWindowVisible(not isUIVisible)
-        end
-    end
-
     function WindowObj:SetColumns(cols)
         cols = (cols == 1) and 1 or 2
         WindowObj.CurrentColumns = cols
-        if cols == 1 then
-            modeCol2.Visible = false
-            modeCol1.Size = UDim2.new(1, 0, 1, 0)
-        else
-            modeCol2.Visible = true
-            modeCol1.Size = UDim2.new(0, 5, 1, 0)
-        end
 
         local targetSize = (cols == 1) and WindowObj.SingleColSize or WindowObj.NormalSize
         if not WindowObj.IsZoomed then
-            safeTween(Main, TWEEN_FAST, {
-                Size = targetSize,
-                Position = UDim2.new(0.5, -targetSize.X.Offset / 2, 0.5, -targetSize.Y.Offset / 2)
+            safeTween(WindowHolder, TWEEN_FAST, {
+                Size = targetSize
             })
         end
 
         if cols == 1 then
-            ContentArea.Size = UDim2.new(1, -165, 1, -58)
-            Sidebar.Size = UDim2.new(0, 135, 1, -58)
-            SearchBox.Size = UDim2.new(0, 120, 0, 26)
+            Sidebar.Size = UDim2.new(0, 140, 1, -58)
+            Sidebar.Position = UDim2.new(0, 14, 0, 54)
+            ContentArea.Position = UDim2.new(0, 166, 0, 52)
+            ContentArea.Size = UDim2.new(1, -180, 1, -58)
+            SearchBox.Size = UDim2.new(0, 130, 0, 26)
         else
-            ContentArea.Size = UDim2.new(1, -188, 1, -58)
             Sidebar.Size = UDim2.new(0, 155, 1, -58)
+            Sidebar.Position = UDim2.new(0, 14, 0, 54)
+            ContentArea.Position = UDim2.new(0, 176, 0, 52)
+            ContentArea.Size = UDim2.new(1, -190, 1, -58)
             SearchBox.Size = UDim2.new(0, 160, 0, 26)
         end
 
@@ -1256,6 +1343,8 @@ function SonLibrary:CreateWindow(config: {
                 tab:SetColumns(cols)
             end
         end
+
+        updateResponsiveScale()
     end
 
     function WindowObj:ToggleColumns()
@@ -1267,23 +1356,12 @@ function SonLibrary:CreateWindow(config: {
         WindowObj.IsZoomed = not WindowObj.IsZoomed
         zoomBox.Size = WindowObj.IsZoomed and UDim2.new(0, 8, 0, 8) or UDim2.new(0, 12, 0, 12)
         zoomBox.Position = WindowObj.IsZoomed and UDim2.new(0.5, -4, 0.5, -4) or UDim2.new(0.5, -6, 0.5, -6)
-        if WindowObj.IsZoomed then
-            safeTween(Main, TWEEN_FAST, {
-                Size = WindowObj.ZoomedSize,
-                Position = UDim2.new(0.5, -480, 0.5, -300)
-            })
-        else
-            local baseSize = (WindowObj.CurrentColumns == 1) and WindowObj.SingleColSize or WindowObj.NormalSize
-            safeTween(Main, TWEEN_FAST, {
-                Size = baseSize,
-                Position = UDim2.new(0.5, -baseSize.X.Offset / 2, 0.5, -baseSize.Y.Offset / 2)
-            })
-        end
+        local targetSize = WindowObj.IsZoomed and WindowObj.ZoomedSize or ((WindowObj.CurrentColumns == 1) and WindowObj.SingleColSize or WindowObj.NormalSize)
+        safeTween(WindowHolder, TWEEN_FAST, {
+            Size = targetSize
+        })
+        updateResponsiveScale()
     end
-
-    ModeBtn.MouseButton1Click:Connect(function()
-        WindowObj:ToggleColumns()
-    end)
 
     ZoomBtn.MouseButton1Click:Connect(function()
         WindowObj:ToggleZoom()
@@ -1466,7 +1544,8 @@ function SonLibrary:CreateWindow(config: {
 
         local Col1 = Instance.new("ScrollingFrame")
         Col1.Name = "Column_Left"
-        Col1.Size = (WindowObj.CurrentColumns == 1) and UDim2.new(1, 0, 1, 0) or UDim2.new(0.485, 0, 1, 0)
+        Col1.Size = (WindowObj.CurrentColumns == 1) and UDim2.new(1, 0, 1, 0) or UDim2.new(0.5, -6, 1, 0)
+        Col1.Position = UDim2.new(0, 0, 0, 0)
         Col1.BackgroundTransparency = 1
         Col1.ScrollBarThickness = 0
         Col1.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -1475,8 +1554,8 @@ function SonLibrary:CreateWindow(config: {
 
         local Col2 = Instance.new("ScrollingFrame")
         Col2.Name = "Column_Right"
-        Col2.Size = UDim2.new(0.485, 0, 1, 0)
-        Col2.Position = UDim2.new(0.515, 0, 0, 0)
+        Col2.Size = UDim2.new(0.5, -6, 1, 0)
+        Col2.Position = UDim2.new(0.5, 6, 0, 0)
         Col2.BackgroundTransparency = 1
         Col2.ScrollBarThickness = 0
         Col2.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -1546,13 +1625,17 @@ function SonLibrary:CreateWindow(config: {
         function TabObj:SetColumns(colCount)
             if colCount == 1 then
                 Col1.Size = UDim2.new(1, 0, 1, 0)
+                Col1.Position = UDim2.new(0, 0, 0, 0)
                 Col2.Visible = false
                 for _, cData in ipairs(TabObj.Cards) do
                     cData.Card.Parent = Col1
                     cData.Card.LayoutOrder = cData.SingleOrder
                 end
             else
-                Col1.Size = UDim2.new(0.485, 0, 1, 0)
+                Col1.Size = UDim2.new(0.5, -6, 1, 0)
+                Col1.Position = UDim2.new(0, 0, 0, 0)
+                Col2.Size = UDim2.new(0.5, -6, 1, 0)
+                Col2.Position = UDim2.new(0.5, 6, 0, 0)
                 Col2.Visible = true
                 for _, cData in ipairs(TabObj.Cards) do
                     if cData.OriginalCol == 2 then
@@ -1711,6 +1794,7 @@ function SonLibrary:CreateWindow(config: {
             icon.BackgroundTransparency = 1
             icon.Image = ICONS.Chevron
             icon.ImageColor3 = THEME.Accent
+            icon.Active = false
             icon.Parent = header
 
             local BodyContainer = Instance.new("Frame")
@@ -1730,6 +1814,59 @@ function SonLibrary:CreateWindow(config: {
             local isCollapsed = not defaultOpen
             if isCollapsed then
                 icon.Rotation = -90
+                BodyContainer.Visible = false
+                BodyContainer.Size = UDim2.new(1, 0, 0, 0)
+                BodyContainer.AutomaticSize = Enum.AutomaticSize.None
+            end
+
+            local sectionTween = nil
+            local function toggleSection()
+                if sectionTween then
+                    pcall(function() sectionTween:Cancel() end)
+                    sectionTween = nil
+                end
+
+                isCollapsed = not isCollapsed
+                local twInfo = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                safeTween(icon, twInfo, {Rotation = isCollapsed and -90 or 0})
+
+                if isCollapsed then
+                    local curH = BodyContainer.AbsoluteSize.Y
+                    BodyContainer.AutomaticSize = Enum.AutomaticSize.None
+                    BodyContainer.Size = UDim2.new(1, 0, 0, curH)
+
+                    sectionTween = safeTween(BodyContainer, twInfo, {
+                        Size = UDim2.new(1, 0, 0, 0)
+                    })
+                    sectionTween.Completed:Connect(function()
+                        if isCollapsed then
+                            BodyContainer.Visible = false
+                        end
+                    end)
+                else
+                    BodyContainer.Visible = true
+                    BodyContainer.AutomaticSize = Enum.AutomaticSize.None
+                    BodyContainer.Size = UDim2.new(1, 0, 0, 0)
+
+                    local targetH = bList.AbsoluteContentSize.Y
+                    if targetH <= 0 then
+                        for _, child in ipairs(BodyContainer:GetChildren()) do
+                            if child:IsA("GuiObject") and child.Visible then
+                                targetH = targetH + child.AbsoluteSize.Y + bList.Padding.Offset
+                            end
+                        end
+                    end
+                    if targetH <= 0 then targetH = 80 end
+
+                    sectionTween = safeTween(BodyContainer, twInfo, {
+                        Size = UDim2.new(1, 0, 0, targetH)
+                    })
+                    sectionTween.Completed:Connect(function()
+                        if not isCollapsed then
+                            BodyContainer.AutomaticSize = Enum.AutomaticSize.Y
+                        end
+                    end)
+                end
             end
 
             local headClick = Instance.new("TextButton")
@@ -1737,6 +1874,8 @@ function SonLibrary:CreateWindow(config: {
             headClick.BackgroundTransparency = 1
             headClick.Text = ""
             headClick.AutoButtonColor = false
+            headClick.Active = true
+            headClick.ZIndex = 30
             headClick.Parent = header
 
             headClick.MouseEnter:Connect(function()
@@ -1746,11 +1885,7 @@ function SonLibrary:CreateWindow(config: {
                 safeTween(title, TWEEN_FAST, {TextColor3 = THEME.TextPrimary})
             end)
 
-            headClick.MouseButton1Click:Connect(function()
-                isCollapsed = not isCollapsed
-                BodyContainer.Visible = not isCollapsed
-                safeTween(icon, TWEEN_FAST, {Rotation = isCollapsed and -90 or 0})
-            end)
+            headClick.MouseButton1Click:Connect(toggleSection)
 
             local ActiveDropdown = nil
             local KeybindListening = nil
@@ -1886,9 +2021,10 @@ function SonLibrary:CreateWindow(config: {
                 table.insert(WindowObj.RegisteredRows, {Frame = row, Name = name:lower()})
 
                 local textContainer = Instance.new("Frame")
-                textContainer.Size = UDim2.new(1, -90, 1, 0)
+                textContainer.Size = UDim2.new(1, keybind and -116 or -64, 1, 0)
                 textContainer.Position = UDim2.new(0, 12, 0, 0)
                 textContainer.BackgroundTransparency = 1
+                textContainer.ClipsDescendants = true
                 textContainer.Parent = row
 
                 local rowTitle = Instance.new("TextLabel")
@@ -1900,6 +2036,8 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
+                rowTitle.ClipsDescendants = true
                 rowTitle.Parent = textContainer
 
                 if desc then
@@ -1912,6 +2050,8 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
+                    rowDesc.ClipsDescendants = true
                     rowDesc.Parent = textContainer
                 end
 
@@ -2039,6 +2179,7 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
                 rowTitle.Parent = row
 
                 if desc then
@@ -2051,6 +2192,7 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
                     rowDesc.Parent = row
                 end
 
@@ -2140,6 +2282,7 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
                 rowTitle.Parent = row
 
                 local valLabel = Instance.new("TextLabel")
@@ -2163,6 +2306,7 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
                     rowDesc.Parent = row
                 end
 
@@ -2303,6 +2447,7 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
                 rowTitle.Parent = row
 
                 if desc then
@@ -2315,6 +2460,7 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
                     rowDesc.Parent = row
                 end
 
@@ -2559,6 +2705,7 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
                 rowTitle.Parent = row
 
                 if desc then
@@ -2571,6 +2718,7 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
                     rowDesc.Parent = row
                 end
 
@@ -2828,6 +2976,7 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
                 rowTitle.Parent = row
 
                 if desc then
@@ -2840,6 +2989,7 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
                     rowDesc.Parent = row
                 end
 
@@ -2932,6 +3082,7 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
                 rowTitle.Parent = row
 
                 if desc then
@@ -2944,6 +3095,7 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
                     rowDesc.Parent = row
                 end
 
@@ -3035,6 +3187,7 @@ function SonLibrary:CreateWindow(config: {
                 rowTitle.TextSize = 12.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
+                rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
                 rowTitle.Parent = row
 
                 if desc then
@@ -3047,6 +3200,7 @@ function SonLibrary:CreateWindow(config: {
                     rowDesc.TextSize = 9.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
+                    rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
                     rowDesc.Parent = row
                 end
 
@@ -3332,6 +3486,13 @@ function SonLibrary:CreateWindow(config: {
         end
 
         TabObj.CreateCard = TabObj.CreateSection
+
+        function TabObj:BuildConfigSection(targetCol)
+            local sec = TabObj:CreateSection({Title = "Configuration", Collapsible = true, DefaultOpen = true}, targetCol or 1)
+            sec:BuildConfigSection()
+            return sec
+        end
+
         return TabObj
     end
 
