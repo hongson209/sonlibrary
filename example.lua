@@ -1,14 +1,15 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local SonLibrary = (function()
-    if _G.SonLibrary and typeof(_G.SonLibrary.CreateWindow) == "function" then
-        return _G.SonLibrary
+local CoreGui = game:GetService("CoreGui")
+pcall(function()
+    local safeP = (typeof(gethui) == "function" and gethui()) or CoreGui
+    if safeP:FindFirstChild("PastaCompleteUI") then
+        safeP.PastaCompleteUI:Destroy()
     end
-    if typeof(getgenv) == "function" and getgenv().SonLibrary and typeof(getgenv().SonLibrary.CreateWindow) == "function" then
-        return getgenv().SonLibrary
-    end
+end)
 
+local SonLibrary = (function()
     local localPaths = {
         "Library/sonlibrary.lua",
         "sonlibrary.lua",
@@ -23,13 +24,20 @@ local SonLibrary = (function()
         end
     end
 
-    local remoteUrl = "https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua"
+    local remoteUrl = "https://raw.githubusercontent.com/hongson209/sonlibrary/refs/heads/main/sonlibrary.lua?t=" .. tostring(tick())
     local s, content = pcall(function() return game:HttpGet(remoteUrl) end)
     if s and content and #content > 500 then
         local ok, res = pcall(function() return loadstring(content)() end)
         if ok and res and typeof(res.CreateWindow) == "function" then
             return res
         end
+    end
+
+    if _G.SonLibrary and typeof(_G.SonLibrary.CreateWindow) == "function" then
+        return _G.SonLibrary
+    end
+    if typeof(getgenv) == "function" and getgenv().SonLibrary and typeof(getgenv().SonLibrary.CreateWindow) == "function" then
+        return getgenv().SonLibrary
     end
 
     error("[SonHUB] Failed to initialize SonLibrary!")
