@@ -348,6 +348,20 @@ function SonLibrary:Notify(config: {Title: string?, Content: string?, Message: s
     end)
 end
 
+function SonLibrary:Unload()
+    for _, win in ipairs(self.ActiveWindows) do
+        pcall(function()
+            if win.ScreenGui then win.ScreenGui:Destroy() end
+        end)
+    end
+    self.ActiveWindows = {}
+    if self.NotificationGui then
+        pcall(function() self.NotificationGui:Destroy() end)
+        self.NotificationGui = nil
+        self.NotificationContainer = nil
+    end
+end
+
 function SonLibrary:CreateWindow(config: {
     Title: string?,
     SubTitle: string?,
