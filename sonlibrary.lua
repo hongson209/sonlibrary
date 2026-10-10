@@ -57,7 +57,10 @@ local THEME = {
     BadgeBg       = Color3.fromRGB(25, 18, 22),
     ToggleOff     = Color3.fromRGB(36, 28, 32),
     KnobOff       = Color3.fromRGB(78, 68, 73),
-    KnobOn        = Color3.fromRGB(255, 255, 255)
+    KnobOn        = Color3.fromRGB(255, 255, 255),
+    FontBold      = Enum.Font.GothamBold,
+    FontMedium    = Enum.Font.GothamMedium,
+    FontRegular   = Enum.Font.GothamMedium
 }
 
 local ICONS = {
@@ -419,6 +422,14 @@ function SonLibrary:CreateWindow(config: {
         math.clamp(math.floor(Accent.B * 255 - 40), 0, 255)
     )
 
+    if config.Font then
+        THEME.FontRegular = config.Font
+        THEME.FontMedium = config.Font
+    end
+    if config.FontBold then
+        THEME.FontBold = config.FontBold
+    end
+
     local safeParent = getSafeGuiParent()
     pcall(function()
         if safeParent:FindFirstChild("PastaCompleteUI") then
@@ -776,6 +787,7 @@ function SonLibrary:CreateWindow(config: {
         local fpsCounter, lastFpsCheck = 0, os.clock()
         local lastPosition = Vector3.zero
         local lastPosTime = os.clock()
+        local lastStatUpdate = 0
 
         RunService.RenderStepped:Connect(function()
             if not ScreenGui.Parent then return end
@@ -788,33 +800,82 @@ function SonLibrary:CreateWindow(config: {
                 lastFpsCheck = now
             end
 
-            TimeLabel.Text = os.date("%H:%M:%S")
+            -- Throttle text label and layout updates to 0.25s (4x/sec) to eliminate layout thrashing
+            if now - lastStatUpdate >= 0.25 then
+                lastStatUpdate = now
+                TimeLabel.Text = os.date("%H:%M:%S")
 
-            pcall(function()
-                local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-                PingLabel.Text = string.format("%d Ping", ping)
-            end)
+                pcall(function()
+                    local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+                    PingLabel.Text = string.format("%d Ping", ping)
+                end)
 
-            local character = LocalPlayer.Character
-            if character and character:FindFirstChild("HumanoidRootPart") then
-                local hrp = character.HumanoidRootPart
-                local currentPos = hrp.Position
-                PosLabel.Text = string.format("%d, %d, %d", math.floor(currentPos.X), math.floor(currentPos.Y), math.floor(currentPos.Z))
+                local character = LocalPlayer.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = character.HumanoidRootPart
+                    local currentPos = hrp.Position
+                    PosLabel.Text = string.format("%d, %d, %d", math.floor(currentPos.X), math.floor(currentPos.Y), math.floor(currentPos.Z))
 
-                local deltaTime = now - lastPosTime
-                if deltaTime >= 0.1 then
-                    local dist = (Vector3.new(currentPos.X, 0, currentPos.Z) - Vector3.new(lastPosition.X, 0, lastPosition.Z)).Magnitude
-                    local bps = dist / deltaTime
-                    SpeedLabel.Text = string.format("%.1f Bps", bps)
+                    local deltaTime = now - lastPosTime
+                    if deltaTime >= 0.25 then
+                        local dist = (Vector3.new(currentPos.X, 0, currentPos.Z) - Vector3.new(lastPosition.X, 0, lastPosition.Z)).Magnitude
+                        local bps = dist / deltaTime
+                        SpeedLabel.Text = string.format("%.1f Bps", bps)
 
-                    lastPosition = currentPos
-                    lastPosTime = now
+                        lastPosition = currentPos
+                        lastPosTime = now
+                    end
+                else
+                    PosLabel.Text = "0, 0, 0"
+                    SpeedLabel.Text = "0.0 Bps"
                 end
-            else
-                PosLabel.Text = "0, 0, 0"
-                SpeedLabel.Text = "0.0 Bps"
             end
         end)
+
+        -- Drag & Drop support for Watermark / HudContainer (Mouse & Touch)
+        do
+            local hudDragging = false
+            local hudDragStart = Vector3.zero
+            local hudStartPos = HudContainer.Position
+
+            local function startHudDrag(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    hudDragging = true
+                    hudDragStart = input.Position
+                    hudStartPos = HudContainer.Position
+                end
+            end
+
+            HudContainer.InputBegan:Connect(startHudDrag)
+            TopHudRow.InputBegan:Connect(startHudDrag)
+            BottomHudRow.InputBegan:Connect(startHudDrag)
+            for _, child in ipairs(TopHudRow:GetChildren()) do
+                if child:IsA("GuiObject") then
+                    child.InputBegan:Connect(startHudDrag)
+                end
+            end
+            for _, child in ipairs(BottomHudRow:GetChildren()) do
+                if child:IsA("GuiObject") then
+                    child.InputBegan:Connect(startHudDrag)
+                end
+            end
+
+            UserInputService.InputChanged:Connect(function(input)
+                if hudDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    local delta = input.Position - hudDragStart
+                    HudContainer.Position = UDim2.new(
+                        hudStartPos.X.Scale, hudStartPos.X.Offset + delta.X,
+                        hudStartPos.Y.Scale, hudStartPos.Y.Offset + delta.Y
+                    )
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    hudDragging = false
+                end
+            end)
+        end
     end
 
     local WindowHolder = Instance.new("Frame")
@@ -879,7 +940,7 @@ function SonLibrary:CreateWindow(config: {
         local fitW = (vp.X * 0.94) / targetW
         local fitH = (vp.Y * 0.90) / targetH
         local fit = math.min(fitW, fitH)
-        local finalScale = math.clamp(math.min(1, fit), 0.65, 1.1)
+        local finalScale = math.clamp(math.min(1, fit), 0.45, 1.1)
 
         WindowObj.TargetScale = finalScale
         if WindowObj.IsVisible then
@@ -1297,22 +1358,22 @@ function SonLibrary:CreateWindow(config: {
     Footer.Parent = Main
 
     local UserLabel = Instance.new("TextLabel")
-    UserLabel.Size = UDim2.new(1, 0, 0, 13)
+    UserLabel.Size = UDim2.new(1, 0, 0, 14)
     UserLabel.BackgroundTransparency = 1
     UserLabel.Text = (config.Footer and config.Footer.Title) or string.lower(LocalPlayer.Name)
-    UserLabel.Font = Enum.Font.GothamBold
-    UserLabel.TextSize = 10
+    UserLabel.Font = THEME.FontBold
+    UserLabel.TextSize = 11.5
     UserLabel.TextColor3 = THEME.TextMuted
     UserLabel.TextXAlignment = Enum.TextXAlignment.Left
     UserLabel.Parent = Footer
 
     local SubLabel = Instance.new("TextLabel")
-    SubLabel.Size = UDim2.new(1, 0, 0, 11)
-    SubLabel.Position = UDim2.new(0, 0, 0, 13)
+    SubLabel.Size = UDim2.new(1, 0, 0, 12)
+    SubLabel.Position = UDim2.new(0, 0, 0, 14)
     SubLabel.BackgroundTransparency = 1
     SubLabel.Text = (config.Footer and config.Footer.Subtitle) or SubTitle
-    SubLabel.Font = Enum.Font.Gotham
-    SubLabel.TextSize = 7.5
+    SubLabel.Font = THEME.FontRegular
+    SubLabel.TextSize = 10
     SubLabel.TextColor3 = THEME.TextDim
     SubLabel.TextXAlignment = Enum.TextXAlignment.Left
     SubLabel.Parent = Footer
@@ -1811,8 +1872,8 @@ function SonLibrary:CreateWindow(config: {
             title.Position = UDim2.new(0, 9, 0, 0)
             title.BackgroundTransparency = 1
             title.Text = secTitle
-            title.Font = Enum.Font.GothamBold
-            title.TextSize = 12.5
+            title.Font = THEME.FontBold
+            title.TextSize = 14
             title.TextColor3 = THEME.TextPrimary
             title.TextXAlignment = Enum.TextXAlignment.Left
             title.Parent = header
@@ -2057,12 +2118,12 @@ function SonLibrary:CreateWindow(config: {
                 textContainer.Parent = row
 
                 local rowTitle = Instance.new("TextLabel")
-                rowTitle.Size = UDim2.new(1, 0, 0, 15)
-                rowTitle.Position = UDim2.new(0, 0, 0, desc and 7 or 10)
+                rowTitle.Size = UDim2.new(1, 0, 0, 16)
+                rowTitle.Position = UDim2.new(0, 0, 0, desc and 6 or 10)
                 rowTitle.BackgroundTransparency = 1
                 rowTitle.Text = name
-                rowTitle.Font = Enum.Font.GothamMedium
-                rowTitle.TextSize = 12.5
+                rowTitle.Font = THEME.FontMedium
+                rowTitle.TextSize = 13.5
                 rowTitle.TextColor3 = THEME.TextPrimary
                 rowTitle.TextXAlignment = Enum.TextXAlignment.Left
                 rowTitle.TextTruncate = Enum.TextTruncate.AtEnd
@@ -2071,12 +2132,12 @@ function SonLibrary:CreateWindow(config: {
 
                 if desc then
                     local rowDesc = Instance.new("TextLabel")
-                    rowDesc.Size = UDim2.new(1, 0, 0, 13)
-                    rowDesc.Position = UDim2.new(0, 0, 0, 25)
+                    rowDesc.Size = UDim2.new(1, 0, 0, 14)
+                    rowDesc.Position = UDim2.new(0, 0, 0, 24)
                     rowDesc.BackgroundTransparency = 1
                     rowDesc.Text = desc
-                    rowDesc.Font = Enum.Font.Gotham
-                    rowDesc.TextSize = 9.5
+                    rowDesc.Font = THEME.FontRegular
+                    rowDesc.TextSize = 11.5
                     rowDesc.TextColor3 = THEME.TextMuted
                     rowDesc.TextXAlignment = Enum.TextXAlignment.Left
                     rowDesc.TextTruncate = Enum.TextTruncate.AtEnd
@@ -3409,23 +3470,23 @@ function SonLibrary:CreateWindow(config: {
                 rPad.Parent = row
 
                 local pTitle = Instance.new("TextLabel")
-                pTitle.Size = UDim2.new(1, isCopyable and -24 or 0, 0, 16)
+                pTitle.Size = UDim2.new(1, isCopyable and -24 or 0, 0, 18)
                 pTitle.BackgroundTransparency = 1
                 pTitle.Text = ptitle
-                pTitle.Font = Enum.Font.GothamBold
-                pTitle.TextSize = 12
+                pTitle.Font = THEME.FontBold
+                pTitle.TextSize = 13.5
                 pTitle.TextColor3 = THEME.TextPrimary
                 pTitle.TextXAlignment = Enum.TextXAlignment.Left
                 pTitle.Parent = row
 
                 local pDesc = Instance.new("TextLabel")
                 pDesc.Size = UDim2.new(1, isCopyable and -24 or 0, 0, 0)
-                pDesc.Position = UDim2.new(0, 0, 0, 18)
+                pDesc.Position = UDim2.new(0, 0, 0, 20)
                 pDesc.AutomaticSize = Enum.AutomaticSize.Y
                 pDesc.BackgroundTransparency = 1
                 pDesc.Text = content
-                pDesc.Font = Enum.Font.Gotham
-                pDesc.TextSize = 10
+                pDesc.Font = THEME.FontRegular
+                pDesc.TextSize = 12
                 pDesc.TextColor3 = THEME.TextMuted
                 pDesc.TextWrapped = true
                 pDesc.TextXAlignment = Enum.TextXAlignment.Left
