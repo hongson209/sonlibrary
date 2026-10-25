@@ -1801,6 +1801,72 @@ function SonUI:CreateWindow(config)
 			return div
 		end
 
+		-- PARAGRAPH
+		function TabObj:CreateParagraph(paraConfig)
+			paraConfig = paraConfig or {}
+			local pTitle = paraConfig.Title or "Information"
+			local pContent = paraConfig.Content or ""
+
+			local card = Create("Frame", {
+				Name = "Paragraph_" .. pTitle,
+				Size = UDim2.new(1, -8, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundColor3 = Tokens.Colors.SurfaceElevated,
+				BackgroundTransparency = 0.65,
+				BorderSizePixel = 0,
+				ZIndex = 4,
+			}, pageScroll)
+			Corner(Tokens.Corners.Md, card)
+			Stroke(Tokens.Colors.BorderSubtle, 1, 0.65, card)
+
+			Create("UIPadding", {
+				PaddingTop = UDim.new(0, 10),
+				PaddingBottom = UDim.new(0, 10),
+				PaddingLeft = UDim.new(0, 14),
+				PaddingRight = UDim.new(0, 14),
+			}, card)
+
+			local pLayout = Create("UIListLayout", {
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 4),
+			}, card)
+
+			local titleLabel = Create("TextLabel", {
+				Name = "Title",
+				Size = UDim2.new(1, 0, 0, 18),
+				BackgroundTransparency = 1,
+				Text = pTitle,
+				TextColor3 = Tokens.Colors.TextPrimary,
+				Font = Tokens.Typography.FontBold,
+				TextSize = Tokens.Typography.Sizes.Body,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				LayoutOrder = 1,
+				ZIndex = 5,
+			}, card)
+
+			local contentLabel = Create("TextLabel", {
+				Name = "Content",
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				Text = pContent,
+				TextColor3 = Tokens.Colors.TextSecondary,
+				Font = Tokens.Typography.Font,
+				TextSize = Tokens.Typography.Sizes.Sub,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true,
+				LayoutOrder = 2,
+				ZIndex = 5,
+			}, card)
+
+			return {
+				Instance = card,
+				SetTitle = function(_, t) titleLabel.Text = t end,
+				SetContent = function(_, c) contentLabel.Text = c end,
+				Destroy = function() card:Destroy() end,
+			}
+		end
+
 		-- BUTTON (Harmonious Frosted Glass Card with Action Badge)
 		function TabObj:CreateButton(btnConfig)
 			btnConfig = btnConfig or {}
