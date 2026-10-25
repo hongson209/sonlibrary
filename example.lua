@@ -23,7 +23,10 @@ local RAW_URL = "https://raw.githubusercontent.com/hongson209/sonlibrary/refs/he
 
 local ok, res = pcall(function()
 	if typeof(game) == "Instance" and typeof(game.HttpGet) == "function" then
-		return loadstring(game:HttpGet(RAW_URL))()
+		local content = game:HttpGet(RAW_URL)
+		if content and not content:find("404: Not Found") and not content:find("400: Invalid") then
+			return loadstring(content)()
+		end
 	end
 end)
 
@@ -31,10 +34,18 @@ if ok and typeof(res) == "table" and res.CreateWindow then
 	SonUI = res
 else
 	-- Local offline fallback for testing & development
-	local localPaths = { "sonlibrary.lua", "SonHUB/sonlibrary.lua", "SonHUB/SonUI.lua", "Library/SonUI.lua", "SonUI.lua" }
+	local localPaths = { "SonHUB/sonlibrary.lua", "SonHUB/SonUI.lua", "sonlibrary.lua", "SonUI.lua" }
 	for _, path in ipairs(localPaths) do
-		if typeof(readfile) == "function" and typeof(isfile) == "function" and isfile(path) then
-			local lOk, lRes = pcall(function() return loadstring(readfile(path))() end)
+		local hasFile = false
+		pcall(function()
+			if typeof(isfile) == "function" and isfile(path) then
+				hasFile = true
+			end
+		end)
+		if hasFile and typeof(readfile) == "function" then
+			local lOk, lRes = pcall(function()
+				return loadstring(readfile(path))()
+			end)
 			if lOk and typeof(lRes) == "table" and lRes.CreateWindow then
 				SonUI = lRes
 				break
