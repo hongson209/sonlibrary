@@ -197,7 +197,7 @@ local Icons = {
 	Gear = "rbxassetid://10734950309",
 	Close = "rbxassetid://10747384394", -- x
 	Minimize = "rbxassetid://10734896206", -- minus
-	Maximize = "rbxassetid://10734883594", -- square / maximize
+	Maximize = "rbxassetid://10734895530", -- square / maximize
 	ChevronDown = "rbxassetid://10709790948",
 	ChevronRight = "rbxassetid://10709791281",
 	Check = "rbxassetid://10709790644",
@@ -360,6 +360,12 @@ end
 -- =========================================================================
 -- WINDOW CLASS
 -- =========================================================================
+
+function SonUI:Notify(props)
+	if activeWindow and type(activeWindow.Notify) == "function" then
+		return activeWindow:Notify(props)
+	end
+end
 
 function SonUI:CreateWindow(config)
 	config = config or {}
@@ -619,9 +625,9 @@ function SonUI:CreateWindow(config)
 	local actionsContainer = Create("Frame", {
 		Name = "Actions",
 		Size = UDim2.new(0, 76, 1, 0),
-		Position = UDim2.new(1, -92, 0, 0),
+		Position = UDim2.new(1, -88, 0, 0),
 		BackgroundTransparency = 1,
-		ZIndex = 4,
+		ZIndex = 10,
 	}, header)
 
 	local actionsLayout = Create("UIListLayout", {
@@ -810,7 +816,9 @@ function SonUI:CreateWindow(config)
 			tabBarContainer.Visible = false
 			pagesContainer.Visible = false
 			minIcon.Image = Icons.Maximize
-			Tween(mainFrame, {Size = UDim2.new(currentWindowSize.X.Scale, currentWindowSize.X.Offset, 0, 60)}, Tokens.Motion.Normal)
+			local minWidthOffset = math.floor(currentWindowSize.X.Offset * 0.60)
+			local minWidthScale = currentWindowSize.X.Scale * 0.60
+			Tween(mainFrame, {Size = UDim2.new(minWidthScale, minWidthOffset, 0, 56)}, Tokens.Motion.Normal)
 		else
 			minIcon.Image = Icons.Minimize
 			Tween(mainFrame, {Size = currentWindowSize}, Tokens.Motion.Normal)
@@ -901,6 +909,59 @@ function SonUI:CreateWindow(config)
 
 	function WindowObj:Destroy()
 		screenGui:Destroy()
+	end
+
+	function WindowObj:AddActionButton(btnConfig)
+		btnConfig = btnConfig or {}
+		local iconId = btnConfig.Icon or Icons.Refresh or "rbxassetid://10734940376"
+		local callback = btnConfig.Callback or function() end
+
+		local currentBtns = 0
+		for _, c in ipairs(actionsContainer:GetChildren()) do
+			if c:IsA("TextButton") then
+				currentBtns += 1
+			end
+		end
+		local newCount = currentBtns + 1
+		local newWidth = (newCount * 32) + ((newCount - 1) * 8)
+		actionsContainer.Size = UDim2.new(0, newWidth, 1, 0)
+		actionsContainer.Position = UDim2.new(1, -(newWidth + 12), 0, 0)
+
+		local actBtn = Create("TextButton", {
+			Name = btnConfig.Name or "HeaderActionButton",
+			Size = UDim2.new(0, 32, 0, 32),
+			BackgroundColor3 = Tokens.Colors.SurfaceElevated,
+			BorderSizePixel = 0,
+			Text = "",
+			AutoButtonColor = false,
+			LayoutOrder = btnConfig.LayoutOrder or 0,
+			ZIndex = 5,
+		}, actionsContainer)
+		Corner(Tokens.Corners.Sm, actBtn)
+		Stroke(Tokens.Colors.Border, 1, 0, actBtn)
+
+		local actIcon = CreateIcon(iconId, actBtn, {
+			Name = "ActIcon",
+			Size = UDim2.fromOffset(16, 16),
+			Color = Tokens.Colors.TextSecondary,
+			ZIndex = 6,
+		})
+
+		actBtn.MouseButton1Click:Connect(function()
+			CloseActivePopup()
+			callback()
+		end)
+
+		actBtn.MouseEnter:Connect(function()
+			Tween(actBtn, {BackgroundColor3 = Tokens.Colors.SurfaceHover}, Tokens.Motion.Fast)
+			Tween(actIcon, {ImageColor3 = Tokens.Colors.TextPrimary}, Tokens.Motion.Fast)
+		end)
+		actBtn.MouseLeave:Connect(function()
+			Tween(actBtn, {BackgroundColor3 = Tokens.Colors.SurfaceElevated}, Tokens.Motion.Fast)
+			Tween(actIcon, {ImageColor3 = Tokens.Colors.TextSecondary}, Tokens.Motion.Fast)
+		end)
+
+		return actBtn
 	end
 
 	-- Dynamic Customization Methods (WindUI parity)
