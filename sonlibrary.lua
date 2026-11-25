@@ -8,7 +8,7 @@
 	  * Mode = "Inline": Expanding accordion card with scrollable option container.
 	  * Multi-select support (Multi = true) with live selection badges.
 	  * Dynamic :Refresh(options) and :Set(value) APIs.
-	- ColorPicker Component: Interactive popup with HSV spectrum, Hue slider, RGB readout & quick presets.
+	- ColorPicker Component: Interactive popup with color preset swatches & RGB readout.
 	- Keybind Component: Interactive key listener with auto-triggering on keypress & window toggle binding.
 	- Modal Dialog System (Window:Dialog): Elegant confirmation modal with backdrop blur & action buttons.
 	- Full library parity: Complete methods for all components (:Set, :Get, :Refresh, :Destroy).
@@ -197,7 +197,7 @@ local Icons = {
 	Gear = "rbxassetid://10734950309",
 	Close = "rbxassetid://10747384394", -- x
 	Minimize = "rbxassetid://10734896206", -- minus
-	Maximize = "rbxassetid://10734895530", -- square / maximize
+	Maximize = "rbxassetid://10734886496", -- maximize-2 / expand
 	ChevronDown = "rbxassetid://10709790948",
 	ChevronRight = "rbxassetid://10709791281",
 	Check = "rbxassetid://10709790644",
@@ -259,7 +259,7 @@ local function Tween(instance, properties, duration, style, dir)
 	return t
 end
 
-local SONHUB_ICON_URL = "https://cdn.discordapp.com/attachments/1317065294736265248/1555222187378475029/sonhub.png?backend=b2&ex=6adf6108&is=6ade0f88&hm=6382d2a99fef77485f1e4a6fc43a5093dc9cad400abfd586191115ea1e7f7e50"
+local SONHUB_ICON_URL = "https://raw.githubusercontent.com/hongson209/sonlibrary/main/sonhub.png"
 
 local function ResolveIconAsset(iconSource, fallback)
 	fallback = fallback or Icons.Info
@@ -361,9 +361,12 @@ end
 -- WINDOW CLASS
 -- =========================================================================
 
+local activeWindow = nil
+
 function SonUI:Notify(props)
-	if activeWindow and type(activeWindow.Notify) == "function" then
-		return activeWindow:Notify(props)
+	local target = activeWindow or SonUI._windows[#SonUI._windows]
+	if target and type(target.Notify) == "function" then
+		return target:Notify(props)
 	end
 end
 
@@ -477,6 +480,23 @@ function SonUI:CreateWindow(config)
 		DisplayOrder = 100,
 	}, parentGui)
 
+	local windowConnections = {}
+	local function TrackConnection(conn)
+		if conn then
+			table.insert(windowConnections, conn)
+		end
+		return conn
+	end
+
+	screenGui.Destroying:Connect(function()
+		for _, conn in ipairs(windowConnections) do
+			if typeof(conn) == "RBXScriptConnection" and conn.Connected then
+				conn:Disconnect()
+			end
+		end
+		table.clear(windowConnections)
+	end)
+
 	-- Overlays & Popups Layer (ZIndex 100)
 	local overlayLayer = Create("Frame", {
 		Name = "OverlayLayer",
@@ -564,6 +584,7 @@ function SonUI:CreateWindow(config)
 		Size = UDim2.new(1, -110, 1, 0),
 		Position = UDim2.new(0, 20, 0, 0),
 		BackgroundTransparency = 1,
+		ClipsDescendants = true,
 		ZIndex = 3,
 	}, header)
 
@@ -605,6 +626,7 @@ function SonUI:CreateWindow(config)
 		Font = Tokens.Typography.FontBold,
 		TextSize = Tokens.Typography.Sizes.Title,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 		ZIndex = 4,
 	}, brandBlock)
 
@@ -618,6 +640,7 @@ function SonUI:CreateWindow(config)
 		Font = Tokens.Typography.FontMedium,
 		TextSize = Tokens.Typography.Sizes.Sub,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 		ZIndex = 4,
 	}, brandBlock)
 
@@ -703,13 +726,13 @@ function SonUI:CreateWindow(config)
 		end
 	end)
 
-	UserInputService.InputEnded:Connect(function(input)
+	TrackConnection(UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = false
 		end
-	end)
+	end))
 
-	UserInputService.InputChanged:Connect(function(input)
+	TrackConnection(UserInputService.InputChanged:Connect(function(input)
 		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local delta = input.Position - dragStart
 			local vp = GetViewport()
@@ -721,11 +744,14 @@ function SonUI:CreateWindow(config)
 			local clampedY = math.clamp(targetY, 0, maxY)
 			mainFrame.Position = UDim2.fromOffset(clampedX, clampedY)
 		end
-	end)
+	end))
+
+	local isMinimized = false
+	local minimizeSeq = 0
 
 	-- Dynamic Viewport Orientation & Size Change Listener
 	if camera then
-		camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+		TrackConnection(camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
 			local newSize, newMob, newSmall = CalculateWindowGeometry(config.Size)
 			currentWindowSize = newSize
 			if not isMinimized then
@@ -743,7 +769,7 @@ function SonUI:CreateWindow(config)
 					Tween(mainFrame, {Position = UDim2.fromOffset(clampedX, clampedY)}, Tokens.Motion.Fast)
 				end
 			end
-		end)
+		end))
 	end
 
 	-- =====================================================================
@@ -756,6 +782,7 @@ function SonUI:CreateWindow(config)
 		BackgroundColor3 = userSidebarColor,
 		BackgroundTransparency = isSidebarLayout and userSidebarTrans or 1,
 		BorderSizePixel = 0,
+		ClipsDescendants = true,
 		ZIndex = 2,
 	}, mainFrame)
 	Corner(Tokens.Corners.Md, tabBarContainer)
@@ -806,26 +833,44 @@ function SonUI:CreateWindow(config)
 	Corner(Tokens.Corners.Lg, pagesContainer)
 	local pagesStroke = Stroke(Tokens.Colors.BorderSubtle, 1, 0, pagesContainer)
 
-	-- Minimize Mechanism
-	local isMinimized = false
+	-- Minimize Mechanism (Clips smoothly while shrinking/expanding without popping)
 	minBtn.MouseButton1Click:Connect(function()
 		CloseActivePopup()
 		isMinimized = not isMinimized
+		minimizeSeq += 1
+		local seq = minimizeSeq
+
 		if isMinimized then
 			mainFrame.ClipsDescendants = true
-			tabBarContainer.Visible = false
-			pagesContainer.Visible = false
+			tabBarContainer.ClipsDescendants = true
 			minIcon.Image = Icons.Maximize
-			local minWidthOffset = math.floor(currentWindowSize.X.Offset * 0.60)
+			local minWidthOffset = math.min(currentWindowSize.X.Offset, math.max(240, math.floor(currentWindowSize.X.Offset * 0.60)))
 			local minWidthScale = currentWindowSize.X.Scale * 0.60
+			Tween(headerDivider, {BackgroundTransparency = 1}, Tokens.Motion.Fast)
 			Tween(mainFrame, {Size = UDim2.new(minWidthScale, minWidthOffset, 0, 56)}, Tokens.Motion.Normal)
-		else
-			minIcon.Image = Icons.Minimize
-			Tween(mainFrame, {Size = currentWindowSize}, Tokens.Motion.Normal)
 			task.delay(Tokens.Motion.Normal, function()
-				if not isMinimized then
-					tabBarContainer.Visible = true
-					pagesContainer.Visible = true
+				if isMinimized and seq == minimizeSeq then
+					tabBarContainer.Visible = false
+					pagesContainer.Visible = false
+				end
+			end)
+		else
+			mainFrame.ClipsDescendants = true
+			tabBarContainer.Visible = true
+			pagesContainer.Visible = true
+			minIcon.Image = Icons.Minimize
+			local vp = GetViewport()
+			local maxX = math.max(0, vp.X - currentWindowSize.X.Offset)
+			local maxY = math.max(0, vp.Y - currentWindowSize.Y.Offset)
+			local clampedX = math.clamp(mainFrame.Position.X.Offset, 0, maxX)
+			local clampedY = math.clamp(mainFrame.Position.Y.Offset, 0, maxY)
+			Tween(headerDivider, {BackgroundTransparency = 0.65}, Tokens.Motion.Fast)
+			Tween(mainFrame, {
+				Size = currentWindowSize,
+				Position = UDim2.fromOffset(clampedX, clampedY),
+			}, Tokens.Motion.Normal)
+			task.delay(Tokens.Motion.Normal, function()
+				if not isMinimized and seq == minimizeSeq then
 					mainFrame.ClipsDescendants = false
 				end
 			end)
@@ -877,17 +922,18 @@ function SonUI:CreateWindow(config)
 		_closeActivePopup = CloseActivePopup,
 		_toggleKey = config.ToggleKey or Enum.KeyCode.RightControl,
 	}
+	activeWindow = WindowObj
 	table.insert(SonUI._windows, WindowObj)
 
 	-- Window Toggle Hotkey
-	UserInputService.InputBegan:Connect(function(input, gpe)
+	TrackConnection(UserInputService.InputBegan:Connect(function(input, gpe)
 		if not gpe and input.KeyCode == WindowObj._toggleKey then
 			mainFrame.Visible = not mainFrame.Visible
 			if not mainFrame.Visible then
 				CloseActivePopup()
 			end
 		end
-	end)
+	end))
 
 	function WindowObj:SetToggleKey(keyCode)
 		WindowObj._toggleKey = keyCode
@@ -908,6 +954,9 @@ function SonUI:CreateWindow(config)
 	end
 
 	function WindowObj:Destroy()
+		if activeWindow == WindowObj then
+			activeWindow = nil
+		end
 		screenGui:Destroy()
 	end
 
@@ -2170,12 +2219,12 @@ function SonUI:CreateWindow(config)
 			local function UpdateState(val, trigger)
 				state = val
 				if state then
-					Tween(switch, {BackgroundColor3 = userAccent}, Tokens.Motion.Fast)
+					Tween(switch, {BackgroundColor3 = userAccent, BackgroundTransparency = 0}, Tokens.Motion.Fast)
 					Tween(switchStroke, {Color = Tokens.Colors.AccentGlow}, Tokens.Motion.Fast)
 					Tween(knob, {Position = UDim2.new(1, -23, 0.5, -10)}, Tokens.Motion.Fast)
 					Tween(cardStroke, {Color = Tokens.Colors.BorderActive}, Tokens.Motion.Fast)
 				else
-					Tween(switch, {BackgroundColor3 = Tokens.Colors.SurfaceHover}, Tokens.Motion.Fast)
+					Tween(switch, {BackgroundColor3 = Tokens.Colors.SurfaceHover, BackgroundTransparency = 0.45}, Tokens.Motion.Fast)
 					Tween(switchStroke, {Color = Tokens.Colors.Border}, Tokens.Motion.Fast)
 					Tween(knob, {Position = UDim2.new(0, 3, 0.5, -10)}, Tokens.Motion.Fast)
 					Tween(cardStroke, {Color = Tokens.Colors.Border}, Tokens.Motion.Fast)
@@ -2210,7 +2259,9 @@ function SonUI:CreateWindow(config)
 			local name = sliderConfig.Name or "Slider"
 			local min = sliderConfig.Min or 0
 			local max = sliderConfig.Max or 100
-			local step = sliderConfig.Step or 1
+			if max < min then max = min end
+			local range = (max ~= min) and (max - min) or 1
+			local step = (sliderConfig.Step and sliderConfig.Step > 0) and sliderConfig.Step or 1
 			local suffix = sliderConfig.Suffix or ""
 			local currentVal = math.clamp(sliderConfig.Default or sliderConfig.CurrentValue or min, min, max)
 			local callback = sliderConfig.Callback or function() end
@@ -2271,7 +2322,7 @@ function SonUI:CreateWindow(config)
 
 			local fill = Create("Frame", {
 				Name = "Fill",
-				Size = UDim2.new((currentVal - min) / (max - min), 0, 1, 0),
+				Size = UDim2.new((currentVal - min) / range, 0, 1, 0),
 				BackgroundColor3 = userAccent,
 				BorderSizePixel = 0,
 				ZIndex = 6,
@@ -2293,7 +2344,7 @@ function SonUI:CreateWindow(config)
 			local function SetValue(v, trigger)
 				local snapped = math.floor((v - min) / step + 0.5) * step + min
 				currentVal = math.clamp(snapped, min, max)
-				local alpha = (currentVal - min) / (max - min)
+				local alpha = (currentVal - min) / range
 
 				valPill.Text = tostring(currentVal) .. suffix
 				Tween(fill, {Size = UDim2.new(alpha, 0, 1, 0)}, Tokens.Motion.Instant)
@@ -2309,7 +2360,9 @@ function SonUI:CreateWindow(config)
 			end
 
 			local function UpdateFromMouse(input)
-				local relativeX = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+				local trackWidth = track.AbsoluteSize.X
+				if trackWidth <= 0 then return end
+				local relativeX = math.clamp((input.Position.X - track.AbsolutePosition.X) / trackWidth, 0, 1)
 				local targetVal = min + (max - min) * relativeX
 				SetValue(targetVal)
 			end
@@ -2321,17 +2374,17 @@ function SonUI:CreateWindow(config)
 				end
 			end)
 
-			UserInputService.InputEnded:Connect(function(input)
+			TrackConnection(UserInputService.InputEnded:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 					dragging = false
 				end
-			end)
+			end))
 
-			UserInputService.InputChanged:Connect(function(input)
+			TrackConnection(UserInputService.InputChanged:Connect(function(input)
 				if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 					UpdateFromMouse(input)
 				end
-			end)
+			end))
 
 			return {
 				Instance = card,
@@ -2478,6 +2531,8 @@ function SonUI:CreateWindow(config)
 					floatingMenu = nil
 				end
 				isOpen = false
+				overlayBackdrop.Visible = false
+				activePopup = nil
 				Tween(chevron, {Rotation = 0}, Tokens.Motion.Fast)
 				Tween(pillStroke, {Color = Tokens.Colors.BorderSubtle}, Tokens.Motion.Fast)
 			end
@@ -2534,14 +2589,23 @@ function SonUI:CreateWindow(config)
 						ZIndex = isPopupContainer and 107 or 13,
 					}, optBtn)
 
-					if isCurrent then
-						CreateIcon(Icons.Check, optBtn, {
-							Size = UDim2.fromOffset(14, 14),
-							Position = UDim2.new(1, -12, 0.5, 0),
-							AnchorPoint = Vector2.new(1, 0.5),
-							Color = userAccent,
-							ZIndex = isPopupContainer and 107 or 13,
-						})
+					local checkIcon = CreateIcon(Icons.Check, optBtn, {
+						Size = UDim2.fromOffset(14, 14),
+						Position = UDim2.new(1, -12, 0.5, 0),
+						AnchorPoint = Vector2.new(1, 0.5),
+						Color = userAccent,
+						ZIndex = isPopupContainer and 107 or 13,
+					})
+					checkIcon.Visible = isCurrent and true or false
+
+					local function RefreshOptVisual(active)
+						isCurrent = active
+						checkIcon.Visible = active and true or false
+						optBtn.BackgroundColor3 = active and userAccent or Tokens.Colors.SurfaceElevated
+						optBtn.BackgroundTransparency = active and 0.84 or 1
+						optStroke.Transparency = active and 0.60 or 1
+						optLabel.TextColor3 = active and Tokens.Colors.TextPrimary or Tokens.Colors.TextSecondary
+						optLabel.Font = active and Tokens.Typography.FontBold or Tokens.Typography.FontMedium
 					end
 
 					optBtn.MouseEnter:Connect(function()
@@ -2563,15 +2627,13 @@ function SonUI:CreateWindow(config)
 
 					optBtn.MouseButton1Click:Connect(function()
 						if isMulti then
-							selected[opt] = not selected[opt]
+							local nextState = not selected[opt]
+							selected[opt] = nextState
+							RefreshOptVisual(nextState)
 							UpdateDisplayText()
 							task.spawn(function()
 								pcall(callback, selected)
 							end)
-							-- Refresh highlight
-							if isPopupContainer then
-								CloseFloatingPopup()
-							end
 						else
 							selected = opt
 							UpdateDisplayText()
@@ -2787,7 +2849,7 @@ function SonUI:CreateWindow(config)
 				bindBtn.Text = "[ ... ]"
 				Tween(btnStroke, {Color = userAccent}, Tokens.Motion.Fast)
 
-				listenConn = UserInputService.InputBegan:Connect(function(input, gpe)
+				listenConn = TrackConnection(UserInputService.InputBegan:Connect(function(input, gpe)
 					if input.UserInputType == Enum.UserInputType.Keyboard then
 						if input.KeyCode ~= Enum.KeyCode.Unknown then
 							currentKey = input.KeyCode
@@ -2806,25 +2868,30 @@ function SonUI:CreateWindow(config)
 						if listenConn then listenConn:Disconnect() end
 						Tween(btnStroke, {Color = Tokens.Colors.BorderSubtle}, Tokens.Motion.Fast)
 					end
-				end)
+				end))
 			end)
 
-			UserInputService.InputBegan:Connect(function(input, gpe)
+			TrackConnection(UserInputService.InputBegan:Connect(function(input, gpe)
 				if not gpe and not isListening and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == currentKey then
 					task.spawn(function()
 						pcall(callback, currentKey)
 					end)
 				end
-			end)
+			end))
+
+			local function SetKeyValue(key)
+				currentKey = key
+				bindBtn.Text = "[ " .. (typeof(key) == "EnumItem" and key.Name or tostring(key)) .. " ]"
+				task.spawn(function() pcall(onChanged, key) end)
+			end
 
 			return {
 				Instance = card,
-				SetKey = function(_, key)
-					currentKey = key
-					bindBtn.Text = "[ " .. (typeof(key) == "EnumItem" and key.Name or tostring(key)) .. " ]"
-					task.spawn(function() pcall(onChanged, key) end)
-				end,
+				Set = function(_, key) SetKeyValue(key) end,
+				SetKey = function(_, key) SetKeyValue(key) end,
+				Get = function(_) return currentKey end,
 				GetKey = function(_) return currentKey end,
+				Destroy = function() card:Destroy() end,
 			}
 		end
 
@@ -2903,6 +2970,8 @@ function SonUI:CreateWindow(config)
 					colorPopup = nil
 				end
 				isOpen = false
+				overlayBackdrop.Visible = false
+				activePopup = nil
 			end
 
 			swatch.MouseButton1Click:Connect(function()
@@ -3113,67 +3182,6 @@ function SonUI:CreateWindow(config)
 				SetValue = function(_, t) box.Text = t end,
 				Get = function(_) return box.Text end,
 				GetValue = function(_) return box.Text end,
-			}
-		end
-
-		-- PARAGRAPH
-		function TabObj:CreateParagraph(paraConfig)
-			paraConfig = paraConfig or {}
-			local title = paraConfig.Title or "Notice"
-			local content = paraConfig.Content or ""
-
-			local card = Create("Frame", {
-				Name = "Paragraph_" .. title,
-				Size = UDim2.new(1, -8, 0, 68),
-				BackgroundColor3 = Tokens.Colors.SurfaceElevated,
-				BorderSizePixel = 0,
-				AutomaticSize = Enum.AutomaticSize.Y,
-				ZIndex = 4,
-			}, pageScroll)
-			Corner(Tokens.Corners.Md, card)
-			Stroke(Tokens.Colors.BorderSubtle, 1, 0, card)
-
-			local padding = Create("UIPadding", {
-				PaddingLeft = UDim.new(0, 14),
-				PaddingRight = UDim.new(0, 14),
-				PaddingTop = UDim.new(0, 10),
-				PaddingBottom = UDim.new(0, 12),
-			}, card)
-
-			local pLayout = Create("UIListLayout", {
-				Padding = UDim.new(0, 6),
-			}, card)
-
-			local pTitle = Create("TextLabel", {
-				Name = "Title",
-				Size = UDim2.new(1, 0, 0, 18),
-				BackgroundTransparency = 1,
-				Text = title,
-				TextColor3 = userAccent,
-				Font = Tokens.Typography.FontBold,
-				TextSize = Tokens.Typography.Sizes.Body,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				ZIndex = 5,
-			}, card)
-
-			local pText = Create("TextLabel", {
-				Name = "Content",
-				Size = UDim2.new(1, 0, 0, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
-				Text = content,
-				TextColor3 = Tokens.Colors.TextSecondary,
-				Font = Tokens.Typography.Font,
-				TextSize = Tokens.Typography.Sizes.Sub,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextWrapped = true,
-				ZIndex = 5,
-			}, card)
-
-			return {
-				Instance = card,
-				SetTitle = function(_, t) pTitle.Text = t end,
-				SetContent = function(_, c) pText.Text = c end,
 			}
 		end
 

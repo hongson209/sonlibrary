@@ -65,7 +65,7 @@ local Window = SonUI:CreateWindow({
 	Name = "SonLibraryShowcase",
 	Title = "SonLibrary",
 	Subtitle = "Universal Executive Framework v3.2",
-	Icon = "https://cdn.discordapp.com/attachments/1317065294736265248/1555222187378475029/sonhub.png?backend=b2&ex=6adf6108&is=6ade0f88&hm=6382d2a99fef77485f1e4a6fc43a5093dc9cad400abfd586191115ea1e7f7e50",
+	Icon = "https://raw.githubusercontent.com/hongson209/sonlibrary/main/sonhub.png",
 	Layout = "Sidebar", -- "Sidebar" (Tab | Content) or "Top" (Horizontal Header Tabs)
 	Style = "Acrylic Frosted", -- "Acrylic Frosted", "Midnight Velvet", "Obsidian Slate", "Emerald Oasis", "Sunset Amber", "Rose Quartz"
 	Size = UDim2.fromOffset(700, 530),

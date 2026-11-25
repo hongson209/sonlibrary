@@ -1,7 +1,7 @@
 # 🌟 SonLibrary (v3.2) — Universal UI Framework
 
 <p align="center">
-  <img src="https://cdn.discordapp.com/attachments/1317065294736265248/1555222187378475029/sonhub.png?backend=b2&ex=6adf6108&is=6ade0f88&hm=6382d2a99fef77485f1e4a6fc43a5093dc9cad400abfd586191115ea1e7f7e50" width="128" height="128" alt="SonLibrary Logo" />
+  <img src="https://raw.githubusercontent.com/hongson209/sonlibrary/main/sonhub.png" width="128" height="128" alt="SonLibrary Logo" />
 </p>
 
 <p align="center">
@@ -50,7 +50,7 @@
   - `Mode = "Inline"`: Mở rộng cuộn mượt mà ngay trong lòng thẻ card.
   - `Multi = true`: Tick chọn cùng lúc nhiều tùy chọn với huy hiệu số lượng động.
 - 🔔 **Sonner / Island Pill Notifications**: Hệ thống thông báo viên thuốc Acrylic 2 tầng chống giật lag, tự động reflow trượt dồn lên êm dịu khi đóng.
-- 🎨 **HSV & RGB ColorPicker**: Trực quan hóa quang phổ màu với thanh trượt Hue, mã hex và bảng màu preset.
+- 🎨 **Preset ColorPicker**: Trực quan hóa bảng màu preset kèm hiển thị mã RGB theo thời gian thực.
 - ⌨️ **Smart Keybind Listener**: Nhận diện phím bấm thông minh, tự động lưu và gọi callback tức thì.
 - 🛡️ **Zero-Conflict Native Execution**: Tương thích hoàn hảo với CoreGui / HiddenUI (`gethui`), không để lại rác bộ nhớ.
 
@@ -66,7 +66,7 @@ local SonUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/hongson
 local Window = SonUI:CreateWindow({
     Title = "SonLibrary",
     Subtitle = "Universal Executive Suite v3.2",
-    Icon = "https://cdn.discordapp.com/attachments/1317065294736265248/1555222187378475029/sonhub.png?backend=b2&ex=6adf6108&is=6ade0f88&hm=6382d2a99fef77485f1e4a6fc43a5093dc9cad400abfd586191115ea1e7f7e50",
+    Icon = "https://raw.githubusercontent.com/hongson209/sonlibrary/main/sonhub.png",
     Layout = "Sidebar", -- "Sidebar" hoặc "Top"
     Style = "Acrylic Frosted",
     Size = UDim2.fromOffset(700, 530),
@@ -98,11 +98,16 @@ local Window = SonUI:CreateWindow({
 | :--- | :--- | :--- |
 | `Window:Toggle()` | Không | Đảo trạng thái Ẩn/Hiện của cửa sổ |
 | `Window:SetVisible(bool)` | `boolean` | Đặt trực tiếp trạng thái hiển thị |
+| `Window:ToggleLayout()` | Không | Chuyển qua lại giữa `"Sidebar"` và `"Top"` |
 | `Window:SetLayout(mode)` | `"Sidebar"` / `"Top"` | Đổi bố cục thanh Tab tức thì |
 | `Window:SetStyle(name)` | `string` / `table` | Chuyển đổi theme phong cách giao diện |
 | `Window:SetAccentColor(col)` | `Color3` | Đổi màu đèn Neon / Accent glow |
+| `Window:SetBackgroundColor(col)` | `Color3` | Đổi màu nền cửa sổ chính |
 | `Window:SetBackgroundTransparency(t)` | `number (0 - 1)` | Đổi độ trong suốt của cửa sổ chính |
+| `Window:SetSurfaceColor(col)` | `Color3` | Đổi màu nền vùng nội dung trang |
+| `Window:SetSidebarColor(col)` | `Color3` | Đổi màu nền thanh Sidebar |
 | `Window:SetSidebarTransparency(t)` | `number (0 - 1)` | Đổi độ trong suốt của dock Sidebar |
+| `Window:AddActionButton(config)` | `table` | Thêm nút thao tác nhanh lên thanh Header |
 | `Window:SetToggleKey(keyCode)` | `Enum.KeyCode` | Đổi phím tắt ẩn/hiện |
 | `Window:Destroy()` | Không | Hủy toàn bộ UI khỏi bộ nhớ game |
 
@@ -256,7 +261,7 @@ MyBind:Set(Enum.KeyCode.F)                    -- Đặt lại phím tắt qua co
 
 ### 8. Bảng Chọn Màu Sắc (`Tab:CreateColorPicker`)
 
-Bảng màu popup đầy đủ bảng quang phổ HSV, thanh chỉnh Hue và các ô màu preset:
+Bảng màu popup gọn gàng với 8 ô màu preset và hiển thị giá trị `RGB(...)`:
 
 ```lua
 local MyColor = Tab:CreateColorPicker({
@@ -290,7 +295,7 @@ MyInput:Set("Giá trị mới")
 
 ---
 
-### 10. Đoạn Văn Bản (`Tab:CreateParagraph`)
+### 10. Đoạn Văn Bản (`Tab:CreateParagraph`) & Đường Phân Cách (`Tab:CreateDivider`)
 
 ```lua
 local Paragraph = Tab:CreateParagraph({
@@ -300,6 +305,9 @@ local Paragraph = Tab:CreateParagraph({
 
 Paragraph:SetTitle("Tiêu đề mới")
 Paragraph:SetContent("Nội dung mới")
+
+Tab:CreateSection("Tên Nhóm")
+Tab:CreateDivider()
 ```
 
 ---
@@ -355,11 +363,11 @@ SonLibrary tích hợp sẵn 6 phong cách thẩm mỹ dịu mắt, chuyển đ�
 | Tên Preset | Mô Tả Thẩm Mỹ | Màu Nền Chính |
 | :--- | :--- | :--- |
 | **`"Acrylic Frosted"`** | Kính mờ hiện đại, dịu mắt, độ hòa quyện cao | `#0D1018` (Trans: 0.28) |
-| **`"Midnight Velvet"`** | Tím đêm sang trọng huyền bí | `#100E1C` (Trans: 0.25) |
-| **`"Obsidian Slate"`** | Đá đen than chì tối giản độ tương phản cao | `#0A0D12` (Trans: 0.12) |
-| **`"Emerald Oasis"`** | Xanh ngọc lục bảo tươi mát | `#081412` (Trans: 0.22) |
-| **`"Sunset Amber"`** | Hoàng hôn cam hổ phách ấm áp | `#160F0C` (Trans: 0.25) |
-| **`"Rose Quartz"`** | Hồng thạch anh quý phái | `#180D15` (Trans: 0.25) |
+| **`"Midnight Velvet"`** | Tím đêm sang trọng huyền bí | `#0F0E17` (Trans: 0.12) |
+| **`"Obsidian Slate"`** | Đá đen than chì tối giản độ tương phản cao | `#0E1014` (Trans: 0.08) |
+| **`"Emerald Oasis"`** | Xanh ngọc lục bảo tươi mát | `#0C1312` (Trans: 0.15) |
+| **`"Sunset Amber"`** | Hoàng hôn cam hổ phách ấm áp | `#14100E` (Trans: 0.15) |
+| **`"Rose Quartz"`** | Hồng thạch anh quý phái | `#140E12` (Trans: 0.16) |
 
 ---
 
